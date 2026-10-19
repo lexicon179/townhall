@@ -50,6 +50,9 @@ $DOMAIN {
 	handle /v1/* {
 		reverse_proxy 127.0.0.1:3381
 	}
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3390
+	}
 	handle {
 		root * /srv
 		try_files {path} /index.html

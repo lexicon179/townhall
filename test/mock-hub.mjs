@@ -95,6 +95,7 @@ async function seed() {
   await mk(100, 'alice', 'Alice', ['gm from the main app', 'running my own node this weekend']);
   await mk(200, 'bob', 'Bob', ['options > perps']);
   await mk(4242, 'mike', 'Mike', []); // the test user's profile (written by their old app)
+  msgs.push((await makeLinkAdd({ type: 'follow', targetFid: 200 }, { fid: 100, network: FarcasterNetwork.MAINNET }, seedSigners.get(100)))._unsafeUnwrap()); // alice follows bob (the signed-out feed)
   names.set('mike', 4242);
 }
 
@@ -127,9 +128,53 @@ const routes = {
   '/v1/signersByFid': async (p) => { await syncKeys(); return { signers: [...(signers.get(Number(p.fid)) ?? new Map())].map(([key, requestFid]) => ({ source: 'SIGNER_SOURCE_ONCHAIN', key, keyType: 1, fid: Number(p.fid), requestFid })) }; },
 };
 
+// ---------- stand-in for the Farcaster client API (signed key requests) ----------
+// The real flow: the person approves in the Farcaster app, which adds the key onchain.
+// Here /test/approve plays the app: it checks the app's EIP-712 signature and activates the key.
+const skr = new Map(); // token -> { key, requestFid, signature, deadline, state, userFid }
+const SIGNIN = 'http://127.0.0.1:' + (process.env.SIGNIN_PORT || 3390);
+async function fcApi(path, req, res) {
+  const u = new URL(req.url, 'http://x');
+  if (path === '/v2/signed-key-requests' && req.method === 'POST') {
+    let raw = ''; for await (const c of req) raw += c;
+    const b = JSON.parse(raw);
+    const token = 'tok_' + Math.random().toString(36).slice(2);
+    skr.set(token, { ...b, state: 'pending', userFid: null });
+    return { result: { signedKeyRequest: { token, deeplinkUrl: `farcaster://signed-key-request?token=${token}`, state: 'pending', key: b.key } } };
+  }
+  if (path === '/v2/signed-key-request') {
+    const r = skr.get(u.searchParams.get('token')); if (!r) throw 404;
+    return { result: { signedKeyRequest: { token: u.searchParams.get('token'), state: r.state, userFid: r.userFid ?? undefined } } };
+  }
+}
+const routesTest = {
+  '/test/approve': async (p) => {
+    const token = p.token || [...skr.keys()].at(-1);
+    const r = skr.get(token); if (!r) throw 404;
+    const { recoverTypedDataAddress } = await import('viem');
+    const signer = await recoverTypedDataAddress({ domain: SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN, types: SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_TYPES.types, primaryType: 'SignedKeyRequest', message: { requestFid: BigInt(r.requestFid), key: r.key, deadline: BigInt(r.deadline) }, signature: r.signature });
+    if (process.env.APP_ADDRESS && signer.toLowerCase() !== process.env.APP_ADDRESS.toLowerCase()) throw new Error('bad app signature');
+    (signers.get(4242) ?? signers.set(4242, new Map()).get(4242)).set(r.key.toLowerCase(), Number(r.requestFid));
+    r.state = 'completed'; r.userFid = 4242;
+    return { ok: true, signer };
+  },
+};
+
 http.createServer(async (req, res) => {
   const path = req.url.split('?')[0];
   try {
+    if (path.startsWith('/v2/')) {
+      const body = await fcApi(path, req, res);
+      res.setHeader('content-type', 'application/json');
+      return res.end(JSON.stringify(body));
+    }
+    if (path.startsWith('/api/')) { // what Caddy does in production
+      let raw = ''; for await (const c of req) raw += c;
+      const r = await fetch(SIGNIN + req.url, { method: req.method, headers: { 'content-type': 'application/json' }, body: req.method === 'POST' ? raw : undefined });
+      res.statusCode = r.status; res.setHeader('content-type', 'application/json');
+      return res.end(await r.text());
+    }
+    if (routesTest[path]) { const body = await routesTest[path](q(req.url)); res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify(body)); }
     if (path === '/v1/submitMessage' && req.method === 'POST') {
       const chunks = []; for await (const c of req) chunks.push(c);
       const m = Message.decode(new Uint8Array(Buffer.concat(chunks)));

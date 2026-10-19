@@ -27,6 +27,14 @@ Have your own server (Ubuntu, 4 vCPU, 16 GB RAM, 2 TB disk)? Skip step 0.
 - Shows which app signed every cast (from the key's `requestFid`) and lets you include or exclude casts by app.
 - Submits writes to your read node, which validates and relays them to validators over gossip.
 
+## Let other people use it (optional)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/signin.sh | bash
+```
+
+Turns your townhall into one anyone can open. Visitors see a feed right away, with no login, and sign in by approving townhall in the Farcaster app (a signed key request). No recovery phrase. The key townhall posts with is made in the visitor's browser and stays there. The server only holds the key of a separate app account that signs the requests. The first run prints that account's address. Send it a little ETH on Optimism to register its FID, then run the command again.
+
 ## Layout
 
 ```
@@ -46,7 +54,7 @@ node test/setup-chain.mjs
 node test/mock-hub.mjs          # serves client/dist and a Snapchain-compatible /v1 API on :3999
 ```
 
-The mock node validates submitted messages for real (hash, Ed25519 signature, active signer) and reads app keys from KeyGateway events, verifying the SignedKeyRequest EIP-712 signature the way the onchain validator does. `test/e2e.mjs` drives the whole flow in a browser: recovery phrase, app key transaction, cast with mention, follow, like, reply, thread, client filter.
+The mock node validates submitted messages for real (hash, Ed25519 signature, active signer) and reads app keys from KeyGateway events, verifying the SignedKeyRequest EIP-712 signature the way the onchain validator does. `test/e2e.mjs` drives the whole flow in a browser: recovery phrase, app key transaction, cast with mention, follow, like, reply, thread, client filter. `test/e2e-signin.mjs` covers the hosted mode: signed-out feed, Sign in with Farcaster (the mock plays the Farcaster API and checks the app's EIP-712 signature), then a cast with the approved key. Run it with `server/index.mjs serve` pointed at the mock (`FC_API=http://127.0.0.1:3999`).
 
 ## Security
 

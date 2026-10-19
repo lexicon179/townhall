@@ -165,3 +165,16 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .voted { font-size: 12px; font-weight: 600; color: var(--signal); border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent); border-radius: 999px; padding: 0 7px; line-height: 18px; }
 .chip.voters:not(.off) { background: var(--signal); border-color: var(--signal); color: #fff; }
 .seg .chip.off { text-decoration: none; }
+
+/* hosted mode: sign in with the Farcaster app, guest feed */
+.guest { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--hair); }
+.guest b { display: block; font-weight: 600; }
+.guest .muted { font-size: 14.5px; }
+.btn.sm { padding: 6px 12px; font-size: 14px; }
+.option.main { border-top: 0; }
+.qr { margin-top: 14px; }
+.qrbox { width: 220px; height: 220px; padding: 8px; background: #fff; border-radius: 12px; }
+.qrbox svg { width: 100%; height: 100%; display: block; }
+.adv { border-top: 1px solid var(--hair); padding: 18px 0; }
+.adv summary { cursor: pointer; color: var(--muted, inherit); }
+.adv .option { border-top: 0; padding-bottom: 0; }

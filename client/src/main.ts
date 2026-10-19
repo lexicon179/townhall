@@ -6,7 +6,8 @@ import {
   isFollowing, liked, signerActive, toDate, type CastMsg,
 } from './hub';
 import { voted } from './votes';
-import { loadKey, forgetKey, inspectSeed, addAppKey, type Stored } from './keys';
+import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, type Stored } from './keys';
+import { loadConfig, startSignin, resumeSignin, dropPending, waitSignin, qrSvg, isMobile, type Config, type Pending } from './signin';
 import { cast, react, follow, deleteCast } from './msg';
 
 const $view = document.getElementById('view')!;
@@ -14,6 +15,7 @@ const $node = document.getElementById('node')!;
 const $me = document.getElementById('me')!;
 
 let key: Stored | null = loadKey();
+let cfg: Config = { signin: false, appFid: null, defaultFid: null };
 const READ_FID = () => Number(localStorage.getItem('readFid') || 0);
 const myFid = () => key?.fid || READ_FID();
 
@@ -84,8 +86,8 @@ async function nodeStatus() {
     const height = Math.max(0, ...(i.shardInfos ?? []).map((s: any) => Number(s.maxHeight ?? 0)));
     $node.className = 'node ' + (worst < 10 ? 'ok' : 'warn');
     $node.innerHTML = worst < 10
-      ? `<b>Your node</b> in sync${height ? `, block ${height.toLocaleString('en-US')}` : ''}`
-      : `<b>Your node</b> catching up, ${worst.toLocaleString('en-US')} blocks behind`;
+      ? `<b>${cfg.signin ? 'Node' : 'Your node'}</b> in sync${height ? `, block ${height.toLocaleString('en-US')}` : ''}`
+      : `<b>${cfg.signin ? 'Node' : 'Your node'}</b> catching up, ${worst.toLocaleString('en-US')} blocks behind`;
   } catch {
     $node.className = 'node bad';
     $node.innerHTML = '<b>Your node</b> is starting. On first run it downloads the network, which takes a few hours';
@@ -94,7 +96,7 @@ async function nodeStatus() {
 
 async function renderMe() {
   const f = myFid();
-  if (!f) { $me.innerHTML = ''; return; }
+  if (!f) { $me.innerHTML = cfg.signin || cfg.defaultFid ? '<a class="btn primary sm" href="#/setup">Sign in</a>' : ''; return; }
   const p = await profile(f);
   $me.innerHTML = `<a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
 }
@@ -210,15 +212,17 @@ function composer(parent?: { fid: number; hash: string }, done?: () => void) {
 
 async function viewFeed() {
   const fid = myFid();
-  if (!fid) return viewSetup();
+  const guest = !fid && !!cfg.defaultFid;
+  if (!fid && !guest) return viewSetup();
   $view.innerHTML = '';
+  if (guest) $view.append(h(`<div class="guest"><div><b>You are reading the town square.</b><span class="muted">Sign in to see the people you follow, and to post.</span></div><a class="btn primary" href="#/setup">Sign in</a></div>`));
   if (key) $view.append(composer());
   const filter = h(`<div class="sources"><button class="chip voters ${votersOnly ? '' : 'off'}" aria-pressed="${votersOnly}" title="Only show people who voted">Voters only</button><span class="sources-label">Apps in your feed</span><div class="chips"></div></div>`);
   const list = h('<section></section>');
   $view.append(filter, list);
   list.innerHTML = '<div class="center">Reading your feed from your node…</div>';
 
-  const fids = [fid, ...(await following(fid, 150))];
+  const fids = guest ? await following(cfg.defaultFid!, 150) : [fid, ...(await following(fid, 150))];
   const batches = await pool(fids, 12, (f) => castsByFid(f, 4).catch(() => []));
   const casts = batches.flat().sort((a, b) => b.data.timestamp - a.data.timestamp).slice(0, 120);
   list.innerHTML = casts.length ? '' : '<div class="center">Nothing yet. Follow some people.</div>';
@@ -241,7 +245,7 @@ async function viewFeed() {
   });
   const chips = filter.querySelector('.chips')!;
   for (const [app, n] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
-    const name = app === fid ? 'own keys' : (await profile(app)).username || `app ${app}`;
+    const name = app === fid || (key && app === cfg.appFid) ? 'townhall' : (await profile(app)).username || `app ${app}`;
     const chip = h(`<button class="chip ${hiddenApps.has(app) ? 'off' : ''}" aria-pressed="${!hiddenApps.has(app)}" title="Show or hide casts signed by ${esc(name)}">${esc(name)} <span>${n}</span></button>`);
     chip.addEventListener('click', () => {
       hiddenApps.has(app) ? hiddenApps.delete(app) : hiddenApps.add(app);
@@ -324,6 +328,59 @@ async function viewReplies() {
   for (const el of await pool(items, 8, (c) => castEl(c))) list.append(el);
 }
 
+let pendingStop = { stop: false };
+
+function signinCard() {
+  const si = h(`
+    <section class="option main">
+      <h2>Sign in with Farcaster</h2>
+      <p class="muted">Approve townhall in the Farcaster app. No recovery phrase. The key townhall posts with is made in this browser and stays here.</p>
+      <div class="row"><button class="btn primary" data-a="go">Sign in with Farcaster</button></div>
+      <div class="qr"></div>
+      <div class="status muted"></div>
+      <div class="err"></div>
+    </section>`);
+  const go = si.querySelector<HTMLButtonElement>('[data-a=go]')!, qr = si.querySelector<HTMLElement>('.qr')!;
+  const status = si.querySelector<HTMLElement>('.status')!, err = si.querySelector<HTMLElement>('.err')!;
+  const run = async (p: Pending) => {
+    go.hidden = true; err.textContent = '';
+    if (isMobile()) {
+      qr.innerHTML = `<a class="btn primary" href="${esc(p.deeplinkUrl)}">Open the Farcaster app</a>`;
+      status.textContent = 'Approve townhall there, then come back to this page.';
+    } else {
+      qr.innerHTML = `<div class="qrbox">${qrSvg(p.deeplinkUrl)}</div><p class="muted">Scan with your phone camera and approve in the Farcaster app. <a href="${esc(p.deeplinkUrl)}" target="_blank" rel="noreferrer">Open link</a></p>`;
+      status.textContent = 'Waiting for approval…';
+    }
+    pendingStop.stop = true; pendingStop = { stop: false };
+    try {
+      const stored = await waitSignin(p, (s) => {
+        if (s === 'approved') { qr.innerHTML = ''; status.textContent = 'Approved. The Farcaster app is adding the key to your account…'; }
+      }, pendingStop);
+      qr.innerHTML = '';
+      status.textContent = 'Key added. Waiting for the node to see it…';
+      saveKey(stored);
+      localStorage.setItem('readFid', String(stored.fid));
+      key = stored;
+      for (let i = 0; i < 60 && !(await signerActive(stored.fid, stored.pub).catch(() => false)); i++) await new Promise((r) => setTimeout(r, 5000));
+      renderMe();
+      location.hash = '#/';
+      route();
+    } catch (e) {
+      if ((e as Error).message === 'cancelled') return;
+      err.textContent = (e as Error).message; go.hidden = false;
+    }
+  };
+  go.addEventListener('click', async () => {
+    go.disabled = true;
+    try { await run(await startSignin()); } catch (e) { err.textContent = (e as Error).message; }
+    go.disabled = false;
+  });
+  const p = resumeSignin();
+  if (p) run(p);
+  else dropPending();
+  return si;
+}
+
 function viewSetup() {
   $view.innerHTML = '';
   // Read-only: just a username
@@ -342,10 +399,10 @@ function viewSetup() {
     route();
   });
 
-  // Write: seed phrase -> app key via one Optimism transaction
+  // Write: seed phrase -> app key via one Optimism transaction (self-hosted only)
   const w = h(`
     <section class="option">
-      <h2>Read and post</h2>
+      <h2>${cfg.signin ? 'Use a recovery phrase' : 'Read and post'}</h2>
       <p class="muted">This client posts with its own app key. Your recovery phrase signs one transaction on Optimism that adds the key to your account, then it is cleared from the page.</p>
       <p class="warnbox">Only paste a recovery phrase into a client you run yourself, like this one on your server. Never into a site someone else hosts.</p>
       <textarea placeholder="Recovery phrase, 12 or 24 words" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
@@ -387,7 +444,13 @@ function viewSetup() {
     }
   });
 
-  $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), ro, w);
+  if (cfg.signin) {
+    const adv = h('<details class="adv"><summary>Running your own copy of townhall? Use a recovery phrase</summary></details>');
+    adv.append(w);
+    $view.append(h('<div class="hero"><h1>Farcaster, only the people who showed up.</h1><p>A calm Farcaster client. Read from a real node, filter to people who voted, keep replies to mutuals.</p></div>'), signinCard(), ro, adv);
+  } else {
+    $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), ro, w);
+  }
 }
 
 function viewSettings() {
@@ -434,5 +497,4 @@ async function route() {
 window.addEventListener('hashchange', route);
 nodeStatus();
 setInterval(nodeStatus, 15000);
-renderMe();
-route();
+loadConfig().then((c) => { cfg = c; renderMe(); route(); });
