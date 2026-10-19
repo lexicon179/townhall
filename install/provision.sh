@@ -79,7 +79,7 @@ echo "  This is billed by Hetzner while it exists. Delete it in the Hetzner cons
 # Re-running is safe: an existing server with this name is reused.
 SERVER=$(hc GET "/servers?name=$NAME" | jq -c '{server: .servers[0]} | select(.server != null)')
 if [ -n "$SERVER" ]; then
-  LOCATION=$(jq -r .server.datacenter.location.name <<<"$SERVER")
+  LOCATION=$(jq -r '.server.datacenter.location.name // .server.location.name // "unknown"' <<<"$SERVER")
   say "Using your existing server '$NAME' ($LOCATION)"
 else
   # A location can be temporarily out of a server type ("error during placement").
@@ -115,7 +115,7 @@ else
   [ -n "$MADE" ] || die "Could not create a volume. Raise your volume limit in the Hetzner console (Limits) and re-run."
   say "Attached a ${MADE} GB volume"
   if [ "$MADE" -lt 2000 ]; then
-    echo "  ! Snapchain recommends 2 TB free. ${MADE} GB is enough to sync and try things now;"
+    echo "  ! Snapchain recommends 2 TB free. ${MADE} GB should be enough to start syncing;"
     echo "    to run long-term, ask Hetzner to raise your volume limit and resize the volume."
   fi
 fi
