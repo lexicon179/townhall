@@ -88,7 +88,7 @@ async function nodeStatus() {
       : `<b>Your node</b> catching up, ${worst.toLocaleString('en-US')} blocks behind`;
   } catch {
     $node.className = 'node bad';
-    $node.innerHTML = '<b>Your node</b> is not answering yet';
+    $node.innerHTML = '<b>Your node</b> is starting. On first run it downloads the network, which takes a few hours';
   }
 }
 
