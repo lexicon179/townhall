@@ -75,24 +75,50 @@ if [ -z "$FW_ID" ]; then
 fi
 
 echo "  This is billed by Hetzner while it exists. Delete it in the Hetzner console when you are done."
-# A location can be temporarily out of a server type ("error during placement").
-# Try the chosen one first, then the other EU locations.
-SERVER=""
-for LOC in $LOCATION $(printf '%s\n' fsn1 nbg1 hel1 | grep -vx "$LOCATION"); do
-  say "Creating server '$NAME' ($SERVER_TYPE, $LOC, Ubuntu 24.04) with a ${VOLUME_GB} GB volume"
-  BODY=$(jq -n --arg n "$NAME" --arg t "$SERVER_TYPE" --arg l "$LOC" --argjson k "$KEY_ID" --argjson f "$FW_ID" \
-    '{name:$n, server_type:$t, location:$l, image:"ubuntu-24.04", ssh_keys:[$k], firewalls:[{firewall:$f}], start_after_create:true}')
-  OUT=$(curl -sS -X POST "$API/servers" -H "Authorization: Bearer $HCLOUD_TOKEN" -H 'Content-Type: application/json' --data "$BODY" -w '\n%{http_code}')
-  CODE=$(tail -n1 <<<"$OUT"); OUT=$(sed '$d' <<<"$OUT")
-  if [ "$CODE" -lt 400 ]; then SERVER="$OUT"; LOCATION="$LOC"; break; fi
-  echo "  $LOC: $(jq -r '.error.message // .' <<<"$OUT")"
-done
-[ -n "$SERVER" ] || die "No capacity for $SERVER_TYPE right now. Try again in a while, or set SERVER_TYPE (e.g. SERVER_TYPE=cpx42)."
+
+# Re-running is safe: an existing server with this name is reused.
+SERVER=$(hc GET "/servers?name=$NAME" | jq -c '{server: .servers[0]} | select(.server != null)')
+if [ -n "$SERVER" ]; then
+  LOCATION=$(jq -r .server.datacenter.location.name <<<"$SERVER")
+  say "Using your existing server '$NAME' ($LOCATION)"
+else
+  # A location can be temporarily out of a server type ("error during placement").
+  # Try the chosen one first, then the other EU locations.
+  for LOC in $LOCATION $(printf '%s\n' fsn1 nbg1 hel1 | grep -vx "$LOCATION"); do
+    say "Creating server '$NAME' ($SERVER_TYPE, $LOC, Ubuntu 24.04)"
+    BODY=$(jq -n --arg n "$NAME" --arg t "$SERVER_TYPE" --arg l "$LOC" --argjson k "$KEY_ID" --argjson f "$FW_ID" \
+      '{name:$n, server_type:$t, location:$l, image:"ubuntu-24.04", ssh_keys:[$k], firewalls:[{firewall:$f}], start_after_create:true}')
+    OUT=$(curl -sS -X POST "$API/servers" -H "Authorization: Bearer $HCLOUD_TOKEN" -H 'Content-Type: application/json' --data "$BODY" -w '\n%{http_code}')
+    CODE=$(tail -n1 <<<"$OUT"); OUT=$(sed '$d' <<<"$OUT")
+    if [ "$CODE" -lt 400 ]; then SERVER="$OUT"; LOCATION="$LOC"; break; fi
+    echo "  $LOC: $(jq -r '.error.message // .' <<<"$OUT")"
+  done
+  [ -n "$SERVER" ] || die "No capacity for $SERVER_TYPE right now. Try again in a while, or set SERVER_TYPE (e.g. SERVER_TYPE=cpx42)."
+fi
 SERVER_ID=$(jq -r .server.id <<<"$SERVER")
 IP=$(jq -r .server.public_net.ipv4.ip <<<"$SERVER")
 
-hc POST /volumes "$(jq -n --arg n "$NAME-data" --argjson s "$VOLUME_GB" --argjson id "$SERVER_ID" \
-  '{name:$n, size:$s, server:$id, automount:true, format:"ext4"}')" >/dev/null
+# Volume. New Hetzner accounts have a limit on total volume size; if 2 TB is over it,
+# fall back to smaller sizes and say so. Ask Hetzner to raise the limit to run long-term.
+if hc GET "/volumes?name=$NAME-data" | jq -e '.volumes[0]' >/dev/null; then
+  say "Using your existing volume '$NAME-data'"
+else
+  MADE=""
+  for SIZE in $VOLUME_GB 1000 500; do
+    [ "$SIZE" -le "$VOLUME_GB" ] || continue
+    OUT=$(curl -sS -X POST "$API/volumes" -H "Authorization: Bearer $HCLOUD_TOKEN" -H 'Content-Type: application/json' \
+      --data "$(jq -n --arg n "$NAME-data" --argjson s "$SIZE" --argjson id "$SERVER_ID" '{name:$n, size:$s, server:$id, automount:true, format:"ext4"}')" -w '\n%{http_code}')
+    CODE=$(tail -n1 <<<"$OUT"); OUT=$(sed '$d' <<<"$OUT")
+    if [ "$CODE" -lt 400 ]; then MADE=$SIZE; break; fi
+    echo "  volume ${SIZE} GB: $(jq -r '.error.message // .' <<<"$OUT")"
+  done
+  [ -n "$MADE" ] || die "Could not create a volume. Raise your volume limit in the Hetzner console (Limits) and re-run."
+  say "Attached a ${MADE} GB volume"
+  if [ "$MADE" -lt 2000 ]; then
+    echo "  ! Snapchain recommends 2 TB free. ${MADE} GB is enough to sync and try things now;"
+    echo "    to run long-term, ask Hetzner to raise your volume limit and resize the volume."
+  fi
+fi
 
 say "Waiting for the server to boot"
 for _ in $(seq 1 60); do
