@@ -1,0 +1,74 @@
+/**
+ * Writing: build a protocol message, sign it with the app key, submit the raw
+ * protobuf bytes to your node. Your read node validates it and relays it to the
+ * validators over gossip; a validator puts it in a block.
+ */
+import {
+  makeCastAdd, makeCastRemove, makeReactionAdd, makeReactionRemove, makeLinkAdd, makeLinkRemove,
+  Message, FarcasterNetwork, ReactionType, hexStringToBytes,
+} from '@farcaster/core';
+import { HUB, fidByName } from './hub';
+import { signerOf, type Stored } from './keys';
+
+const network = FarcasterNetwork.MAINNET;
+const bytes = (h: string) => hexStringToBytes(h)._unsafeUnwrap();
+
+async function submit(made: { isErr(): boolean; error?: unknown; value?: Message } | any): Promise<string> {
+  if (made.isErr()) throw made.error;
+  const msg: Message = made.value;
+  const r = await fetch(`${HUB}/v1/submitMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: Message.encode(msg).finish(),
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`Node rejected the message: ${text.slice(0, 300)}`);
+  return JSON.parse(text).hash as string;
+}
+
+/** "@name" mentions become protocol mentions: removed from text, positions in UTF-8 bytes. */
+async function parseMentions(text: string) {
+  const enc = new TextEncoder();
+  const mentions: number[] = [];
+  const mentionsPositions: number[] = [];
+  let out = '';
+  let last = 0;
+  for (const m of text.matchAll(/(^|\s)@([a-z0-9][a-z0-9-]{0,15}(?:\.eth)?)/gi)) {
+    const at = m.index! + m[1].length;
+    const fid = await fidByName(m[2].toLowerCase());
+    if (!fid || mentions.length >= 10) continue;
+    out += text.slice(last, at);
+    mentions.push(fid);
+    mentionsPositions.push(enc.encode(out).length);
+    last = at + 1 + m[2].length;
+  }
+  out += text.slice(last);
+  return { text: out, mentions, mentionsPositions };
+}
+
+export async function cast(k: Stored, text: string, parent?: { fid: number; hash: string }) {
+  const parsed = await parseMentions(text);
+  const url = text.match(/https?:\/\/\S+/)?.[0];
+  return submit(await makeCastAdd({
+    ...parsed,
+    embeds: url ? [{ url }] : [],
+    embedsDeprecated: [],
+    type: 0,
+    ...(parent ? { parentCastId: { fid: parent.fid, hash: bytes(parent.hash) } } : {}),
+  } as any, { fid: k.fid, network }, signerOf(k)));
+}
+
+export async function deleteCast(k: Stored, hash: string) {
+  return submit(await makeCastRemove({ targetHash: bytes(hash) }, { fid: k.fid, network }, signerOf(k)));
+}
+
+export async function react(k: Stored, type: 'like' | 'recast', target: { fid: number; hash: string }, on = true) {
+  const body = { type: type === 'like' ? ReactionType.LIKE : ReactionType.RECAST, targetCastId: { fid: target.fid, hash: bytes(target.hash) } };
+  const make = on ? makeReactionAdd : makeReactionRemove;
+  return submit(await make(body, { fid: k.fid, network }, signerOf(k)));
+}
+
+export async function follow(k: Stored, targetFid: number, on = true) {
+  const make = on ? makeLinkAdd : makeLinkRemove;
+  return submit(await make({ type: 'follow', targetFid } as any, { fid: k.fid, network }, signerOf(k)));
+}

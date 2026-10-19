@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>townhall · your own Farcaster client and node in three commands</title>
+<meta name="description" content="Run a Snapchain read node and your own Farcaster client in three commands. No API keys. A tutorial that explains every piece as you go.">
+<style>
+:root{--bg:#fbfaf8;--fg:#141414;--muted:#666;--line:#e6e3de;--card:#fff;--code:#f2efe9;--accent:#2b59ff;--warn:#b45309;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0d0d0e;--fg:#efefef;--muted:#9b9b9b;--line:#26262a;--card:#151517;--code:#1c1c20;--accent:#8aa6ff;--warn:#f0a35a}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-size:17px;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:24px 18px 120px}
+nav.toc{position:sticky;top:0;z-index:3;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;padding:10px 18px;font-size:14px}
+nav.toc a{color:var(--muted);text-decoration:none;margin-right:16px}nav.toc a:hover{color:var(--fg)}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.08;letter-spacing:-.03em;margin:28px 0 12px}
+h2{font-size:26px;letter-spacing:-.02em;margin:56px 0 12px;padding-top:8px}
+h3{font-size:19px;margin:30px 0 8px}
+p,li{max-width:68ch}.lead{font-size:20px;color:var(--muted)}
+a{color:var(--accent)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--code);padding:.1em .35em;border-radius:5px}
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:12px;padding:14px 72px 14px 16px;overflow-x:auto;font-size:14px;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+.copy{position:absolute;top:8px;right:8px;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:3px 10px;cursor:pointer}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps>li{counter-increment:s;position:relative;padding-left:44px;margin:18px 0}
+.steps>li::before{content:counter(s,decimal);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:14px}
+.steps.zero>li::before{content:counter(s,decimal);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:16px 0}
+.note{border-left:3px solid var(--accent);padding:6px 14px;margin:16px 0;color:var(--fg)}
+.warn{border-left:3px solid var(--warn);padding:6px 14px;margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:12px 0}
+th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px 6px;vertical-align:top}th{color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}.diagram{width:100%;min-width:600px;height:auto;margin:10px 0}
+.diagram text{fill:var(--fg);font-size:13px;font-family:inherit}
+.diagram .muted{fill:var(--muted);font-size:11.5px}
+.diagram rect{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.diagram rect.hl{stroke:var(--accent);stroke-width:2}
+.diagram path{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#arr)}
+.diagram path.w{stroke:var(--accent)}
+dl dt{font-weight:700;margin-top:14px}dl dd{margin:2px 0 0 0;color:var(--fg)}
+.small{font-size:14px;color:var(--muted)}
+footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<nav class="toc">
+  <a href="#quickstart">Quickstart</a><a href="#what">What you get</a><a href="#before">Before you start</a>
+  <a href="#step0">0 · Server</a><a href="#step1">1 · Node</a><a href="#step2">2 · Client</a>
+  <a href="#use">Using it</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a>
+  <a href="#security">Security</a><a href="#trouble">Troubleshooting</a><a href="#cost">Cost & cleanup</a>
+</nav>
+<main>
+
+<h1>Your own Farcaster client and node, in three commands.</h1>
+<p class="lead">A Snapchain read node on a server you control, and a client that reads from it and posts with its own key. No API keys from anyone. This page explains every piece as you go, so at the end you know how Farcaster actually works.</p>
+
+<h2 id="quickstart">Quickstart</h2>
+<p>From your computer, with a <a href="#before">Hetzner Cloud API token</a>:</p>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<p>It prints your server's IP. Then:</p>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash'</code></pre>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash'</code></pre>
+<p>Open the <code>https://…sslip.io</code> address the last command prints. Your node needs a few hours to sync; the client shows its progress in the top bar.</p>
+<div class="note">Already have a server (any provider, Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 2 TB disk)? Skip the first command and run the other two on it.</div>
+<p class="small">Prefer to read before you run? Every script is short and commented: <a href="https://github.com/lexicon179/townhall/tree/main/install">install/</a>. The client is built from source on your server, so what runs is what is in the repo.</p>
+
+<h2 id="what">What you get</h2>
+<div class="scroll"><svg class="diagram" viewBox="0 0 720 315" role="img" aria-label="Your browser talks only to your server. Your server runs the client and a Snapchain read node. The read node syncs blocks from the network and relays your messages to validators. App keys are registered on Optimism.">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--muted);stroke:none"/></marker></defs>
+  <rect x="10" y="110" width="150" height="70" rx="12"/><text x="85" y="140" text-anchor="middle">Your browser</text><text x="85" y="160" text-anchor="middle" class="muted">signs with your app key</text>
+  <rect x="220" y="40" width="250" height="210" rx="14" class="hl"/><text x="345" y="66" text-anchor="middle" font-weight="700">Your server</text>
+  <rect x="240" y="84" width="210" height="60" rx="10"/><text x="345" y="108" text-anchor="middle">Client (Caddy, HTTPS)</text><text x="345" y="127" text-anchor="middle" class="muted">static app + /v1 proxy</text>
+  <rect x="240" y="164" width="210" height="66" rx="10"/><text x="345" y="190" text-anchor="middle">Snapchain read node</text><text x="345" y="209" text-anchor="middle" class="muted">full copy of Farcaster, :3381</text>
+  <rect x="540" y="60" width="170" height="70" rx="12"/><text x="625" y="90" text-anchor="middle">Snapchain network</text><text x="625" y="110" text-anchor="middle" class="muted">validators make blocks</text>
+  <rect x="540" y="190" width="170" height="70" rx="12"/><text x="625" y="220" text-anchor="middle">Optimism</text><text x="625" y="240" text-anchor="middle" class="muted">FIDs and app keys</text>
+  <path d="M160 135 L238 115"/><path d="M345 144 L345 162"/>
+  <path d="M452 180 L538 110" class="w"/><path d="M538 92 L452 168"/>
+  <path d="M85 180 C 85 290, 480 300, 538 236" class="w"/>
+  <text x="625" y="150" text-anchor="middle" class="muted">your node relays casts,</text><text x="625" y="166" text-anchor="middle" class="muted">syncs blocks back</text>
+  <text x="330" y="306" text-anchor="middle" class="muted">one transaction to add your app key</text>
+</svg></div>
+<ul>
+  <li><b>A read node.</b> A full, verified copy of every cast, reaction, follow and profile on Farcaster, kept in sync with the network. Anyone can run one.</li>
+  <li><b>A client.</b> Home feed of the people you follow, profiles, threads, posting, replies, likes, recasts, follows. It also shows which app signed each cast and lets you hide or show casts by app.</li>
+  <li><b>Your own app key.</b> The client signs with a key that belongs to you and that you added to your account yourself. Nobody in the middle can post for you, hide your feed or block your writes, as long as your node is up.</li>
+</ul>
+
+<h2 id="before">Before you start</h2>
+<table>
+  <tr><th>You need</th><th>Why</th><th>How</th></tr>
+  <tr><td>A server with 4 vCPU, 16 GB RAM, 2 TB disk</td><td>Snapchain's documented requirements. The disk holds the whole network.</td><td>Step 0 creates one on Hetzner. Create an account, a project, then <i>Security → API tokens → Generate</i> with Read &amp; Write.</td></tr>
+  <tr><td>A Farcaster account and its recovery phrase</td><td>Only to post. The phrase signs one transaction that adds your app key. Read-only mode needs just a username.</td><td>In the Farcaster app settings, under Advanced → Recovery phrase.</td></tr>
+  <tr><td>About $1 of ETH on Optimism at your custody address</td><td>Gas for that one transaction.</td><td>The client shows the address and balance before you send anything.</td></tr>
+  <tr><td>A terminal with <code>curl</code>, <code>jq</code>, <code>ssh</code></td><td>To run the three commands.</td><td>macOS: <code>brew install jq</code>. Ubuntu: <code>sudo apt install jq</code>.</td></tr>
+</table>
+<p>Hands-on time is about 10 minutes. The node then syncs on its own for a few hours.</p>
+
+<h2 id="step0">Step 0 · Get a server</h2>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<p>What it does, in order:</p>
+<ol>
+  <li>Uses your SSH key (<code>~/.ssh/id_ed25519.pub</code>, created if missing) and uploads it to Hetzner, so only you can log in.</li>
+  <li>Picks the cheapest server type in the location with at least 4 vCPU and 16 GB RAM.</li>
+  <li>Creates a firewall that only opens SSH (22), HTTP/HTTPS for your client (80, 443) and UDP 3382, the port Snapchain nodes use to talk to each other.</li>
+  <li>Creates the server with Ubuntu 24.04 and attaches a 2,000 GB volume for the node's data.</li>
+  <li>Waits until it can SSH in, then prints the next two commands with your IP filled in.</li>
+</ol>
+<p class="small">Options: <code>LOCATION=nbg1</code>, <code>SERVER_TYPE=…</code>, <code>VOLUME_GB=…</code>. A server is billed while it exists, see <a href="#cost">cost &amp; cleanup</a>.</p>
+
+<h2 id="step1">Step 1 · Run a Snapchain read node</h2>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash'</code></pre>
+<ol>
+  <li>Installs Docker.</li>
+  <li>Finds the disk with the most free space (your 2 TB volume) and puts the node there.</li>
+  <li>Downloads the <b>official</b> <code>docker-compose.mainnet.yml</code> and <code>validators.toml</code> from the latest <a href="https://github.com/farcasterxyz/snapchain/releases">Snapchain release</a>, unchanged. That file already configures a read node (<code>read_node = true</code>).</li>
+  <li>Starts the node. It first downloads a ~200 GB snapshot of the network, then replays recent blocks from peers until it catches up.</li>
+  <li>Installs <code>townhall-status</code>, a one-word command that shows how far behind each shard is.</li>
+</ol>
+<!-- REAL_STATUS_OUTPUT: paste output from the live run here -->
+<p>It prints one line per shard with its height and how many blocks it is behind. The node is in sync when every shard is within a few blocks.</p>
+<p>The node answers on port 3381 with Snapchain's HTTP API. Try it on the server: <code>curl -s localhost:3381/v1/castsByFid?fid=1 | jq '.messages[0].data.castAddBody.text'</code></p>
+
+<h2 id="step2">Step 2 · Create your client</h2>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash'</code></pre>
+<ol>
+  <li>Clones this repository and builds the client inside a throwaway Node container.</li>
+  <li>Starts <a href="https://caddyserver.com">Caddy</a>, which gets an HTTPS certificate for <code>YOUR-IP.sslip.io</code> (a free wildcard DNS name that points at your IP; set <code>DOMAIN=your.domain</code> to use your own).</li>
+  <li>Serves the client and forwards <code>/v1/*</code> to your node. The browser only ever talks to your server: same origin, no CORS, no third-party API.</li>
+</ol>
+<p>Re-run the same command any time to update the client.</p>
+
+<h2 id="use">Using the client</h2>
+<h3>Read-only</h3>
+<p>Type your username. The client resolves it to your FID on your node, loads who you follow, and builds your feed from their latest casts. Nothing is signed and nothing is sent anywhere.</p>
+<h3>Connect your account (to post)</h3>
+<ol class="steps">
+  <li><b>Paste your recovery phrase and press Check.</b> The page derives your custody address from the phrase, reads your FID from the IdRegistry contract on Optimism, and shows your ETH balance there. Nothing is sent yet.</li>
+  <li><b>Press Add app key.</b> The page generates a new Ed25519 keypair (your app key), signs a <i>SignedKeyRequest</i> with your custody account, and sends one transaction to the <code>KeyGateway</code> contract on Optimism.</li>
+  <li><b>Wait for your node.</b> Once the transaction confirms, your node picks up the onchain event and the key becomes active for your FID. The page clears the phrase and keeps only the app key in this browser.</li>
+</ol>
+<h3>Post, reply, like, recast, follow</h3>
+<p>Each action builds a protocol message, signs it with your app key in the browser, and submits the raw bytes to your node. Mentions like <code>@alice</code> are resolved on your node and stored as protocol mentions.</p>
+<h3>Include or exclude casts by app</h3>
+<p>Every cast is signed by an app key, and every app key records which app requested it (the app's own FID). The client looks this up on your node for each author and shows it as <i>via farcaster</i>, <i>via own key</i> and so on. Tap an app in the bar above the feed to hide or show its casts. Your choice is remembered in this browser.</p>
+
+<h2 id="concepts">Concepts, in plain words</h2>
+<dl>
+  <dt>FID</dt>
+  <dd>Your Farcaster ID, a number. It lives in the <code>IdRegistry</code> contract on Optimism. Usernames, keys and every message point to it.</dd>
+  <dt>Custody address and recovery phrase</dt>
+  <dd>The Ethereum account that owns your FID. Your recovery phrase is the private key to it. Whoever has the phrase owns the account, which is why it is only used once here, locally, to add an app key.</dd>
+  <dt>App keys (signers)</dt>
+  <dd>Ed25519 keys that sign your messages. You can have many, one per app. Adding one onchain means calling <code>KeyGateway.add</code> from your custody address with metadata signed by the app that asks for it: a <i>SignedKeyRequest</i>. Here the requesting app is you (your own FID), so you sign both parts. Removing a key (<code>KeyRegistry.remove</code>) revokes it and the messages it signed.</dd>
+  <dd class="small">Snapchain also supports gasless app keys added with a signed message instead of a transaction. This tutorial uses the onchain path because it shows how keys and FIDs are anchored on Optimism.</dd>
+  <dt>Messages</dt>
+  <dd>Everything you do is a small signed message: <code>CAST_ADD</code>, <code>CAST_REMOVE</code>, <code>REACTION_ADD</code> (like or recast), <code>LINK_ADD</code> (follow), <code>USER_DATA_ADD</code> (profile). Each has a BLAKE3 hash and an Ed25519 signature, so any node can check it without trusting anyone.</dd>
+  <dt>Snapchain</dt>
+  <dd>The network that orders and stores those messages. Validators run consensus and produce blocks. Messages are split across shards by FID; shard 0 orders the others.</dd>
+  <dt>Read nodes vs validators</dt>
+  <dd>A read node follows the chain, verifies every block's signatures from the validators, stores the full state and serves the API. It does not vote and keeps no mempool. Anyone can run one; validators are a fixed set of operators.</dd>
+  <dt>Storage</dt>
+  <dd>Each FID rents storage units. A unit allows a fixed number of casts, reactions and follows; when you go over, the oldest are pruned. Without storage, the network rejects your messages. Check yours on your node: <code>/v1/storageLimitsByFid?fid=YOUR_FID</code>.</dd>
+  <dt>Usernames (fnames)</dt>
+  <dd>Human-readable names mapped to FIDs by a signed proof. Your node answers <code>/v1/userNameProofByName?name=…</code>.</dd>
+  <dt>Clients</dt>
+  <dd>Apps are just programs that hold an app key for you and read from some node. The Farcaster app is one; this is another. They all see the same network.</dd>
+</dl>
+
+<h2 id="writes">How a cast travels</h2>
+<ol class="steps">
+  <li>You press Cast. The browser builds a <code>CAST_ADD</code> message with your FID, the text and mentions, hashes it, signs it with your app key, and encodes it as protobuf.</li>
+  <li>It is posted to <code>/v1/submitMessage</code> on your server, which Caddy forwards to your read node.</li>
+  <li>Your node validates it: FID exists, the key is active for that FID, hash and signature are correct, you have storage. If anything is wrong it answers with an error right away.</li>
+  <li>A read node keeps no mempool, so it relays the valid message to the validators over gossip.</li>
+  <li>A validator includes it in a block. Your node syncs that block and the cast shows up in your feed, usually within seconds.</li>
+</ol>
+<div class="note">Why not send writes straight to a validator? The validators' public endpoints are not open for direct submission (the Farcaster team's own node is password protected to prevent abuse). Submitting to your own read node, which relays over gossip, is the permissionless path. A 200 response means "valid and relayed", not "in a block yet"; under heavy load a relayed message can be dropped and needs resubmitting.</div>
+
+<h2 id="security">Security model</h2>
+<ul>
+  <li><b>Your recovery phrase never leaves the page.</b> It is used in your browser to sign one key request and one transaction (sent to Optimism's public RPC), then cleared. It is not sent to your server or stored.</li>
+  <li><b>Only paste it into a client you run yourself.</b> This one is built from public source on your own server. Never paste a phrase into a site someone else hosts.</li>
+  <li><b>The app key lives in this browser</b> (local storage). It can sign messages but cannot move your FID or add other keys. If you lose the device or want to stop, revoke it with <code>KeyRegistry.remove</code> from your custody address, or remove the key in any app that manages your keys.</li>
+  <li><b>Your node's API is public</b> through your client address: anyone can read through it (it is public data anyway) and submit validly signed messages, which your node only relays.</li>
+</ul>
+
+<h2 id="trouble">Troubleshooting</h2>
+<table>
+  <tr><th>You see</th><th>Do this</th></tr>
+  <tr><td>"node unreachable" in the client</td><td>The node is still downloading the snapshot. <code>townhall-status</code> and the node logs show progress.</td></tr>
+  <tr><td>"blocks behind" stays high for hours</td><td>Check UDP 3382 is open in your firewall and the disk is not full (<code>df -h</code>).</td></tr>
+  <tr><td>The client address doesn't load over HTTPS</td><td>Ports 80 and 443 must be open for the certificate. If sslip.io is rate limited, point your own domain at the IP and re-run step 2 with <code>DOMAIN=your.domain</code>.</td></tr>
+  <tr><td>"No ETH on Optimism"</td><td>Send about $1 of ETH on the Optimism network to the custody address shown, then press Check again.</td></tr>
+  <tr><td>"invalid signer" when posting</td><td>Your node hasn't processed the key event yet, usually because it is still syncing. Wait until it is in sync.</td></tr>
+  <tr><td>Messages rejected for storage</td><td>Your FID has no storage units left. Rent storage in any Farcaster app.</td></tr>
+</table>
+
+<h2 id="cost">Cost &amp; cleanup</h2>
+<p>Most of the cost is the 2 TB disk. Hetzner Cloud bills by the hour. With the cheapest 4 vCPU / 16 GB server plus a 2 TB volume, that was about €6 a day (≈€180 a month, ≈€45 for a one-week test) when this was written; check current prices in the Hetzner console. A dedicated server with large disks is cheaper if you keep the node running. Gas for the app key is a few cents.</p>
+<p>To stop paying: delete the server <b>and</b> the volume in the Hetzner console. Your Farcaster account is unaffected; to also revoke the app key, see <a href="#security">security</a>.</p>
+
+<footer>
+  MIT licensed · <a href="https://github.com/lexicon179/townhall">github.com/lexicon179/townhall</a> · Built on the open Farcaster protocol and Snapchain. Sources: <a href="https://docs.farcaster.xyz/learn/architecture/overview">architecture</a>, <a href="https://snapchain.farcaster.xyz/guides/running-a-node">running a node</a>, <a href="https://docs.neynar.com/snapchain/httpapi/httpapi">HTTP API</a>.
+</footer>
+</main>
+<script>
+document.querySelectorAll('pre').forEach(function (pre) {
+  var b = document.createElement('button'); b.className = 'copy'; b.textContent = 'copy';
+  b.onclick = function () { navigator.clipboard.writeText(pre.innerText.replace(/copy$/, '').trim()).then(function () { b.textContent = 'copied'; setTimeout(function () { b.textContent = 'copy'; }, 1200); }); };
+  pre.appendChild(b);
+});
+</script>
+</body>
+</html>

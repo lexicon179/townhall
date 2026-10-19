@@ -1,0 +1,3 @@
+#!/bin/sh
+# fake: "-t ed25519 -N '' -f path" creates a key; "-E md5 -lf file" prints a fingerprint
+case "$*" in *"-lf"*) echo "256 MD5:aa:bb:cc fake (ED25519)";; *) f=$(echo "$*" | sed 's/.*-f //'); mkdir -p "$(dirname "$f")"; echo "ssh-ed25519 AAAAfake test" > "$f.pub"; echo x > "$f";; esac

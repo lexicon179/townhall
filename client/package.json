@@ -1,0 +1,25 @@
+{
+  "name": "townhall-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@farcaster/core": "^0.20.0",
+    "@fontsource-variable/schibsted-grotesk": "^5.3.0",
+    "buffer": "^6.0.3",
+    "viem": "^2.57.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vite": "^6.4.4"
+  },
+  "type": "module"
+}

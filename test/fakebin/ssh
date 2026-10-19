@@ -1,0 +1,2 @@
+#!/bin/sh
+echo "fake ssh $*" >> /tmp/fake-ssh.log; exit 0
