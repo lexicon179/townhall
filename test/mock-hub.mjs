@@ -8,7 +8,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import {
   Message, validations, messageTypeToJSON, reactionTypeToJSON, farcasterNetworkToJSON, MessageType,
-  makeCastAdd, makeUserDataAdd, NobleEd25519Signer, FarcasterNetwork, UserDataType, bytesToHexString,
+  makeCastAdd, makeUserDataAdd, makeLinkAdd, NobleEd25519Signer, FarcasterNetwork, UserDataType, bytesToHexString,
   KEY_GATEWAY_ADDRESS, ID_REGISTRY_ADDRESS, idRegistryABI,
   SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN, SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_TYPES,
 } from '@farcaster/core';
@@ -78,13 +78,14 @@ async function merge(m) {
 const drop = (f) => { for (let i = msgs.length - 1; i >= 0; i--) if (f(msgs[i])) msgs.splice(i, 1); };
 
 // ---------- seed: two other users posting from a different app ----------
+const seedSigners = new Map(); // fid -> signer, so the test can act as other users
 async function seed() {
   const app = 9152; // pretend "farcaster" app fid
   const mk = async (fid, uname, display, texts) => {
     const s = new NobleEd25519Signer(crypto.getRandomValues(new Uint8Array(32)));
     const k = hex((await s.getSignerKey())._unsafeUnwrap());
     (signers.get(fid) ?? signers.set(fid, new Map()).get(fid)).set(k.toLowerCase(), app);
-    names.set(uname, fid);
+    names.set(uname, fid); seedSigners.set(fid, s);
     const o = { fid, network: FarcasterNetwork.MAINNET };
     msgs.push((await makeUserDataAdd({ type: UserDataType.USERNAME, value: uname }, o, s))._unsafeUnwrap());
     msgs.push((await makeUserDataAdd({ type: UserDataType.DISPLAY, value: display }, o, s))._unsafeUnwrap());
@@ -108,6 +109,17 @@ const routes = {
   '/v1/castById': (p) => { const m = of(MessageType.CAST_ADD, p.fid).find((x) => hex(x.hash) === p.hash); if (!m) throw 404; return toJson(m); },
   '/v1/castsByParent': (p) => ({ messages: of(MessageType.CAST_ADD).filter((m) => m.data.castAddBody.parentCastId && hex(m.data.castAddBody.parentCastId.hash) === p.hash).map(toJson) }),
   '/v1/linksByFid': (p) => ({ messages: page(of(MessageType.LINK_ADD, p.fid), p).map(toJson) }),
+  '/v1/linksByTargetFid': (p) => ({ messages: page(of(MessageType.LINK_ADD).filter((m) => m.data.linkBody.targetFid === Number(p.target_fid)), p).map(toJson) }),
+  '/v1/castsByMention': (p) => ({ messages: page(of(MessageType.CAST_ADD).filter((m) => (m.data.castAddBody.mentions ?? []).includes(Number(p.fid))), p).map(toJson) }),
+  // test helper: alice follows mike back and replies to his latest cast; bob replies too (not a mutual)
+  '/test/replies': async () => {
+    const latest = of(MessageType.CAST_ADD, 4242).at(-1);
+    const o = (fid) => ({ fid, network: FarcasterNetwork.MAINNET });
+    msgs.push((await makeLinkAdd({ type: 'follow', targetFid: 4242 }, o(100), seedSigners.get(100)))._unsafeUnwrap());
+    for (const [fid, text] of [[100, 'welcome to the townhall'], [200, 'who dis']])
+      msgs.push((await makeCastAdd({ text, embeds: [], embedsDeprecated: [], mentions: [], mentionsPositions: [], type: 0, parentCastId: { fid: 4242, hash: latest.hash } }, o(fid), seedSigners.get(fid)))._unsafeUnwrap());
+    return { ok: true };
+  },
   '/v1/linkById': (p) => { const m = of(MessageType.LINK_ADD, p.fid).find((x) => x.data.linkBody.targetFid === Number(p.target_fid)); if (!m) throw 404; return toJson(m); },
   '/v1/reactionById': (p) => { const m = of(MessageType.REACTION_ADD, p.fid).find((x) => hex(x.data.reactionBody.targetCastId.hash) === p.target_hash && reactionTypeToJSON(x.data.reactionBody.type).endsWith(p.reaction_type.toUpperCase())); if (!m) throw 404; return toJson(m); },
   '/v1/userDataByFid': (p) => ({ messages: of(MessageType.USER_DATA_ADD, p.fid).map(toJson) }),

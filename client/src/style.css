@@ -101,7 +101,7 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 
 /* ---------- which apps are in the feed ---------- */
 .sources { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 0; border-bottom: 1px solid var(--hair); }
-.sources:has(.chips:empty) { display: none; }
+.sources .chips:empty, .sources-label:has(+ .chips:empty) { display: none; }
 .sources-label { font-size: 13.5px; color: var(--muted); }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip {
@@ -160,3 +160,7 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 .cast > a, .profile > a { text-decoration: none; }
 .pfp, .pfp::before { text-decoration: none; }
+
+/* voters */
+.voted { font-size: 12px; font-weight: 600; color: var(--signal); border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent); border-radius: 999px; padding: 0 7px; line-height: 18px; }
+.chip.voters:not(.off) { background: var(--signal); border-color: var(--signal); color: #fff; }

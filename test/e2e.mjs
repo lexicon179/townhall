@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 const S = process.argv[2];
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport: { width: 420, height: 900 }, deviceScaleFactor: 2 });
-await ctx.addInitScript(() => localStorage.setItem('opRpc', 'http://127.0.0.1:8546'));
+await ctx.addInitScript(() => { localStorage.setItem('opRpc', 'http://127.0.0.1:8546'); localStorage.setItem('baseRpc', 'http://127.0.0.1:8546'); });
 const p = await ctx.newPage();
 const logs = []; p.on('console', (m) => logs.push(m.type() + ': ' + m.text())); p.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
 p.on('dialog', async (d) => { console.log('DIALOG:', d.message()); await d.dismiss(); });
@@ -62,12 +62,31 @@ ok('thread view shows the reply', (await p.$$eval('.cast .text', (e) => e.map((x
 
 // filter by client
 await p.goto('http://localhost:3999/#/');
-await p.waitForSelector('.chip', { timeout: 20000 });
+await p.waitForSelector('.chips .chip', { timeout: 20000 });
 await p.screenshot({ path: `${S}/sc-feed.png`, fullPage: true });
 await p.locator('.chip', { hasText: 'farcaster' }).click();
 const visible = await p.$$eval('.cast', (els) => els.filter((e) => e.style.display !== 'none').map((e) => e.querySelector('.via')?.textContent));
 ok(`hiding a client removes its casts (${visible.join(', ')})`, visible.length > 0 && visible.every((v) => v !== 'via farcaster'));
 await p.screenshot({ path: `${S}/sc-filtered.png`, fullPage: true });
+
+// voters filter: nobody holds a VOTE NFT on the test chain, so "Voters only" hides everything
+await p.locator('.chip', { hasText: 'farcaster' }).click(); // show the app again
+await p.locator('.chip.voters').click();
+ok('voters-only hides non-voters', await p.$$eval('.cast', (els) => els.every((e) => e.style.display === 'none')));
+await p.locator('.chip.voters').click();
+
+// replies: mutuals only by default
+await fetch('http://localhost:3999/test/replies');
+await p.goto('http://localhost:3999/#/n');
+await p.waitForFunction(() => !document.querySelector('.center') || document.querySelectorAll('.cast').length, null, { timeout: 20000 });
+await p.waitForTimeout(600);
+let rt = await p.$$eval('.cast .text', (e) => e.map((x) => x.textContent));
+ok(`replies from mutuals only (${rt.join(' | ')})`, rt.includes('welcome to the townhall') && !rt.includes('who dis'));
+await p.screenshot({ path: `${S}/sc-replies.png`, fullPage: true });
+await p.locator('[data-v="1"]').click();
+await p.waitForFunction(() => document.querySelectorAll('.cast').length >= 2, null, { timeout: 20000 });
+rt = await p.$$eval('.cast .text', (e) => e.map((x) => x.textContent));
+ok('replies from everyone', rt.includes('who dis'));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) console.log(logs.slice(-15).join('\n'));

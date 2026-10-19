@@ -2,9 +2,10 @@ import './polyfill';
 import '@fontsource-variable/schibsted-grotesk';
 import './style.css';
 import {
-  info, castsByFid, castsByParent, following, profile, fidByName, appOfCast, isFollowing, liked,
-  signerActive, toDate, type CastMsg,
+  info, castsByFid, castsByParent, following, followers, castsByMention, profile, fidByName, appOfCast,
+  isFollowing, liked, signerActive, toDate, type CastMsg,
 } from './hub';
+import { voted } from './votes';
 import { loadKey, forgetKey, inspectSeed, addAppKey, type Stored } from './keys';
 import { cast, react, follow, deleteCast } from './msg';
 
@@ -71,6 +72,7 @@ document.addEventListener('error', (e) => {
 
 const hiddenApps = new Set<number>(JSON.parse(localStorage.getItem('hiddenApps') || '[]'));
 const saveHidden = () => localStorage.setItem('hiddenApps', JSON.stringify([...hiddenApps]));
+let votersOnly = localStorage.getItem('votersOnly') === '1';
 
 // ---------- node status ----------
 
@@ -94,7 +96,7 @@ async function renderMe() {
   const f = myFid();
   if (!f) { $me.innerHTML = ''; return; }
   const p = await profile(f);
-  $me.innerHTML = `<a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/settings">Settings</a>`;
+  $me.innerHTML = `<a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
 }
 
 // ---------- cast rendering ----------
@@ -116,14 +118,16 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
   const images = (body.embeds ?? []).filter((e) => e.url && /\.(png|jpe?g|gif|webp)(\?|$)|imagedelivery\.net/i.test(e.url));
   const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e));
   const mine = key && c.data.fid === key.fid;
+  const didVote = await Promise.race([voted(c.data.fid), new Promise<null>((r) => setTimeout(() => r(null), 2500))]);
 
   const el = h(`
-    <article class="cast" data-app="${app ?? ''}">
+    <article class="cast" data-app="${app ?? ''}" data-voted="${didVote ? 1 : 0}">
       <a href="#/u/${p.fid}">${avatar(p)}</a>
       <div>
         <div class="head">
           <a class="name" href="#/u/${p.fid}">${esc(p.display || p.username || `fid ${p.fid}`)}</a>
           <span class="handle">@${esc(p.username || String(p.fid))}</span>
+          ${didVote ? '<span class="voted" title="Accepted the social contract in the Farcaster network vote (VOTE NFT on Base, token id = fid)">voted</span>' : ''}
           <a class="time" href="#/c/${c.data.fid}/${c.hash}">${ago(toDate(c.data.timestamp))}</a>
           ${appName ? `<span class="via" title="The app that signed this cast (app fid ${app})">via ${esc(appName)}</span>` : ''}
         </div>
@@ -209,7 +213,7 @@ async function viewFeed() {
   if (!fid) return viewSetup();
   $view.innerHTML = '';
   if (key) $view.append(composer());
-  const filter = h('<div class="sources"><span class="sources-label">Apps in your feed</span><div class="chips"></div></div>');
+  const filter = h(`<div class="sources"><button class="chip voters ${votersOnly ? '' : 'off'}" aria-pressed="${votersOnly}" title="Only show people who voted">Voters only</button><span class="sources-label">Apps in your feed</span><div class="chips"></div></div>`);
   const list = h('<section></section>');
   $view.append(filter, list);
   list.innerHTML = '<div class="center">Reading your feed from your node…</div>';
@@ -227,7 +231,13 @@ async function viewFeed() {
     if (app) counts.set(app, (counts.get(app) || 0) + 1);
   }
   const apply = () => list.querySelectorAll<HTMLElement>('.cast').forEach((el) => {
-    el.style.display = hiddenApps.has(Number(el.dataset.app || 0)) ? 'none' : '';
+    const hide = hiddenApps.has(Number(el.dataset.app || 0)) || (votersOnly && el.dataset.voted !== '1');
+    el.style.display = hide ? 'none' : '';
+  });
+  const vchip = filter.querySelector<HTMLButtonElement>('.voters')!;
+  vchip.addEventListener('click', () => {
+    votersOnly = !votersOnly; localStorage.setItem('votersOnly', votersOnly ? '1' : '0');
+    vchip.classList.toggle('off', !votersOnly); vchip.setAttribute('aria-pressed', String(votersOnly)); apply();
   });
   const chips = filter.querySelector('.chips')!;
   for (const [app, n] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
@@ -280,6 +290,38 @@ async function viewThread(fid: number, hash: string) {
   const wrap = h('<section class="replies"></section>');
   for (const c of replies) wrap.append(await castEl(c, { showParent: false }));
   $view.append(wrap);
+}
+
+/** Replies and mentions. By default only from mutuals: people you follow who follow you back. */
+async function viewReplies() {
+  const fid = myFid();
+  if (!fid) return viewSetup();
+  const everyone = localStorage.getItem('repliesEveryone') === '1';
+  $view.innerHTML = '';
+  const head = h(`<div class="sources"><span class="sources-label">Replies and mentions from</span><div class="chips">
+    <button class="chip ${everyone ? 'off' : ''}" data-v="0">mutuals</button><button class="chip ${everyone ? '' : 'off'}" data-v="1">everyone</button></div></div>`);
+  head.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-v]');
+    if (b) { localStorage.setItem('repliesEveryone', b.dataset.v!); viewReplies(); }
+  });
+  const list = h('<section><div class="center">Reading replies from your node…</div></section>');
+  $view.append(head, list);
+
+  const [mine, mentions, outs, ins] = await Promise.all([
+    castsByFid(fid, 25), castsByMention(fid, 50).catch(() => []),
+    everyone ? Promise.resolve([]) : following(fid, 3000), everyone ? Promise.resolve([]) : followers(fid, 3000),
+  ]);
+  const replies = (await pool(mine, 6, (c) => castsByParent(fid, c.hash).catch(() => []))).flat();
+  const back = new Set(ins);
+  const mutual = new Set(outs.filter((f) => back.has(f)));
+  const seen = new Set<string>();
+  const items = [...replies, ...mentions]
+    .filter((c) => c.data.fid !== fid && (everyone || mutual.has(c.data.fid)))
+    .filter((c) => !seen.has(c.hash) && seen.add(c.hash))
+    .sort((a, b) => b.data.timestamp - a.data.timestamp)
+    .slice(0, 60);
+  list.innerHTML = items.length ? '' : `<div class="center">${everyone ? 'No replies or mentions yet.' : 'Nothing from mutuals yet. Quiet is fine.'}</div>`;
+  for (const el of await pool(items, 8, (c) => castEl(c))) list.append(el);
 }
 
 function viewSetup() {
@@ -381,6 +423,7 @@ async function route() {
     if (parts[0] === 'u' && parts[1]) return await viewProfile(Number(parts[1]));
     if (parts[0] === 'c' && parts[2]) return await viewThread(Number(parts[1]), parts[2]);
     if (parts[0] === 'settings') return viewSettings();
+    if (parts[0] === 'n') return await viewReplies();
     if (parts[0] === 'setup') return viewSetup();
     return await viewFeed();
   } catch (e) {

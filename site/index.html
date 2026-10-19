@@ -146,6 +146,13 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <h3>Include or exclude casts by app</h3>
 <p>Every cast is signed by an app key, and every app key records which app requested it (the app's own FID). The client looks this up on your node for each author and shows it as <i>via farcaster</i>, <i>via own key</i> and so on. Tap an app in the bar above the feed to hide or show its casts. Your choice is remembered in this browser.</p>
 
+<h3>Voters only</h3>
+<p>People who accepted the social contract in the Farcaster network vote hold a VOTE NFT on Base whose token id is their FID (<a href="https://basescan.org/address/0x4ecfed276c566aeb49da1f3a888e8dbb7263028d">contract</a>). The client asks Base directly, <code>ownerOf(fid)</code>, and marks those authors <i>voted</i>. Turn on <b>Voters only</b> for a feed of people who showed up. Declining minted nothing, so only "yes" is visible onchain.</p>
+<h3>Replies, from mutuals</h3>
+<p><b>Replies</b> collects replies to your recent casts and casts that mention you, all read from your node. By default it shows only mutuals, people you follow who follow you back. Switch to <i>everyone</i> when you want the full picture.</p>
+<h3>On your phone</h3>
+<p>Open your client address and choose <b>Add to Home Screen</b> (Safari: Share menu; Chrome: ⋮ menu). It opens full screen like an app, still talking only to your node.</p>
+
 <h2 id="concepts">Concepts, in plain words</h2>
 <dl>
   <dt>FID</dt>
@@ -195,6 +202,8 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <tr><td>The client address doesn't load over HTTPS</td><td>Ports 80 and 443 must be open for the certificate. If sslip.io is rate limited, point your own domain at the IP and re-run step 2 with <code>DOMAIN=your.domain</code>.</td></tr>
   <tr><td>"No ETH on Optimism"</td><td>Send about $1 of ETH on the Optimism network to the custody address shown, then press Check again.</td></tr>
   <tr><td>"invalid signer" when posting</td><td>Your node hasn't processed the key event yet, usually because it is still syncing. Wait until it is in sync.</td></tr>
+  <tr><td>"volumes size limit exceeded" in step 0</td><td>New Hetzner accounts have a cap on total volume size. Step 0 then attaches the largest volume allowed and tells you. To grow it later, request a higher limit in the Hetzner console (Limits) and resize the volume.</td></tr>
+  <tr><td>"error during placement" in step 0</td><td>That location is out of the server type for now. Step 0 tries the other EU locations automatically.</td></tr>
   <tr><td>Messages rejected for storage</td><td>Your FID has no storage units left. Rent storage in any Farcaster app.</td></tr>
 </table>
 

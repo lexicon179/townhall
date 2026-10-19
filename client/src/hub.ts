@@ -58,6 +58,24 @@ export async function following(fid: number, max = 200): Promise<number[]> {
   return out.slice(0, max);
 }
 
+/** Who follows this account (the reverse of `following`). */
+export async function followers(fid: number, max = 3000): Promise<number[]> {
+  const out: number[] = [];
+  let pageToken: string | undefined;
+  do {
+    const r = await get<any>('linksByTargetFid', { target_fid: fid, link_type: 'follow', pageSize: 100, reverse: true, ...(pageToken ? { pageToken } : {}) });
+    for (const m of r.messages ?? []) if (m.data?.fid) out.push(m.data.fid);
+    pageToken = r.nextPageToken || undefined;
+  } while (pageToken && out.length < max);
+  return out.slice(0, max);
+}
+
+/** Casts that @mention this account. */
+export async function castsByMention(fid: number, pageSize = 50): Promise<CastMsg[]> {
+  const r = await get<{ messages: CastMsg[] }>('castsByMention', { fid, pageSize, reverse: true });
+  return r.messages ?? [];
+}
+
 export async function isFollowing(fid: number, target: number): Promise<boolean> {
   try {
     await get('linkById', { fid, target_fid: target, link_type: 'follow' });
