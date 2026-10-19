@@ -13,7 +13,7 @@ import { signerOf, type Stored } from './keys';
 const network = FarcasterNetwork.MAINNET;
 const bytes = (h: string) => hexStringToBytes(h)._unsafeUnwrap();
 
-async function submit(made: { isErr(): boolean; error?: unknown; value?: Message } | any): Promise<string> {
+export async function submitRaw(made: { isErr(): boolean; error?: unknown; value?: Message } | any): Promise<string> {
   if (made.isErr()) throw made.error;
   const msg: Message = made.value;
   const r = await fetch(`${HUB}/v1/submitMessage`, {
@@ -49,7 +49,7 @@ async function parseMentions(text: string) {
 export async function cast(k: Stored, text: string, parent?: { fid: number; hash: string }) {
   const parsed = await parseMentions(text);
   const url = text.match(/https?:\/\/\S+/)?.[0];
-  return submit(await makeCastAdd({
+  return submitRaw(await makeCastAdd({
     ...parsed,
     embeds: url ? [{ url }] : [],
     embedsDeprecated: [],
@@ -59,16 +59,16 @@ export async function cast(k: Stored, text: string, parent?: { fid: number; hash
 }
 
 export async function deleteCast(k: Stored, hash: string) {
-  return submit(await makeCastRemove({ targetHash: bytes(hash) }, { fid: k.fid, network }, signerOf(k)));
+  return submitRaw(await makeCastRemove({ targetHash: bytes(hash) }, { fid: k.fid, network }, signerOf(k)));
 }
 
 export async function react(k: Stored, type: 'like' | 'recast', target: { fid: number; hash: string }, on = true) {
   const body = { type: type === 'like' ? ReactionType.LIKE : ReactionType.RECAST, targetCastId: { fid: target.fid, hash: bytes(target.hash) } };
   const make = on ? makeReactionAdd : makeReactionRemove;
-  return submit(await make(body, { fid: k.fid, network }, signerOf(k)));
+  return submitRaw(await make(body, { fid: k.fid, network }, signerOf(k)));
 }
 
 export async function follow(k: Stored, targetFid: number, on = true) {
   const make = on ? makeLinkAdd : makeLinkRemove;
-  return submit(await make({ type: 'follow', targetFid } as any, { fid: k.fid, network }, signerOf(k)));
+  return submitRaw(await make({ type: 'follow', targetFid } as any, { fid: k.fid, network }, signerOf(k)));
 }

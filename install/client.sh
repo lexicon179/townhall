@@ -73,9 +73,9 @@ cat <<EOF
 
 ✓ Your client is live: https://$DOMAIN
 
-Open it, choose "Read-only" with your username, or "Connect your account" to post.
-Connecting needs your recovery phrase once (used only in your browser) and
-a little ETH on Optimism at your custody address for one transaction.
+Open it, choose "Just read" with your username, or connect your account to post.
+Connecting needs your recovery phrase once, used only in your browser to sign a
+gasless KEY_ADD. No ETH, no transaction. Use a test account.
 
 Update later:  re-run this command.
 EOF

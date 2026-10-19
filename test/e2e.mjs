@@ -16,11 +16,15 @@ await p.screenshot({ path: `${S}/sc-setup.png`, fullPage: true });
 await p.fill('.option textarea', 'test test test test test test test test test test test junk');
 await p.click('[data-a=check]');
 await p.waitForFunction(() => document.querySelector('.kv')?.textContent.includes('4242'), null, { timeout: 15000 });
-ok('seed phrase -> custody + FID 4242 (@mike) + ETH balance', (await p.textContent('.kv')).includes('@mike'));
+ok('seed phrase -> custody + FID 4242 (@mike)', (await p.textContent('.kv')).includes('@mike'));
 await p.click('[data-a=add]');
-step('adding app key via KeyGateway.add on local chainId 10');
+step('adding app key with a gasless KEY_ADD message');
 await p.waitForSelector('.compose', { timeout: 60000 });
 ok('app key added, node sees it, feed opens', true);
+{ const sg = await (await fetch('http://localhost:3999/v1/signersByFid?fid=4242')).json();
+  const pub = await p.evaluate(() => JSON.parse(localStorage.getItem('appKey')).pub);
+  const mine = sg.signers.find((x) => x.key === pub);
+  ok(`key is gasless (KEY_ADD, no transaction), nonce ${sg.currentUserNonce}, scopes ${mine?.scopes?.length}`, mine?.source === 'SIGNER_SOURCE_OFFCHAIN' && sg.currentUserNonce === 1); }
 ok('seed phrase cleared from the page', !(await p.evaluate(() => [...document.querySelectorAll('textarea')].some((t) => t.value.includes('junk')))));
 ok('only the app key is stored', await p.evaluate(() => { const k = JSON.parse(localStorage.getItem('appKey')); return k.fid === 4242 && k.key.length === 66 && !JSON.stringify(localStorage).includes('junk'); }));
 
@@ -87,6 +91,14 @@ await p.locator('[data-v="1"]').click();
 await p.waitForFunction(() => document.querySelectorAll('.cast').length >= 2, null, { timeout: 20000 });
 rt = await p.$$eval('.cast .text', (e) => e.map((x) => x.textContent));
 ok('replies from everyone', rt.includes('who dis'));
+
+// revoke the key on the network (self-signed KEY_REMOVE)
+await p.goto('http://localhost:3999/#/settings');
+const pubBefore = await p.evaluate(() => JSON.parse(localStorage.getItem('appKey')).pub);
+await p.click('[data-a=revoke]');
+await p.waitForFunction(() => !localStorage.getItem('appKey'), null, { timeout: 15000 });
+{ const sg = await (await fetch('http://localhost:3999/v1/signersByFid?fid=4242')).json();
+  ok('revoke: KEY_REMOVE signed by the key itself, node drops it', !sg.signers.some((x) => x.key === pubBefore)); }
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) console.log(logs.slice(-15).join('\n'));

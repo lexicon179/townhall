@@ -6,7 +6,7 @@ import {
   isFollowing, liked, signerActive, toDate, type CastMsg,
 } from './hub';
 import { voted } from './votes';
-import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, type Stored } from './keys';
+import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, revokeKey, type Stored } from './keys';
 import { loadConfig, startSignin, resumeSignin, dropPending, waitSignin, qrSvg, isMobile, type Config, type Pending } from './signin';
 import { cast, react, follow, deleteCast } from './msg';
 
@@ -403,8 +403,8 @@ function viewSetup() {
   const w = h(`
     <section class="option">
       <h2>${cfg.signin ? 'Use a recovery phrase' : 'Read and post'}</h2>
-      <p class="muted">This client posts with its own app key. Your recovery phrase signs one transaction on Optimism that adds the key to your account, then it is cleared from the page.</p>
-      <p class="warnbox">Only paste a recovery phrase into a client you run yourself, like this one on your server. Never into a site someone else hosts.</p>
+      <p class="muted">This client posts with its own app key. Your recovery phrase signs one KEY_ADD message that adds the key to your account, then it is cleared from the page. No transaction, no gas.</p>
+      <p class="warnbox">Treat a recovery phrase like <code>rm -rf</code>: test with a test account, and only paste it into software you run yourself or from developers you trust. Prefer signing in through an app that holds your account when you can.</p>
       <textarea placeholder="Recovery phrase, 12 or 24 words" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
       <div class="row"><button class="btn" data-a="check">Check phrase</button><button class="btn primary" data-a="add" disabled>Add app key</button></div>
       <div class="kv"></div>
@@ -418,9 +418,8 @@ function viewSetup() {
     try {
       const r = await inspectSeed(ta.value);
       const p = r.fid ? await profile(r.fid) : null;
-      kv.innerHTML = `<b>Custody</b><span>${r.custody}</span><b>FID</b><span>${r.fid || 'none'}${p?.username ? ` (@${esc(p.username)})` : ''}</span><b>ETH on Optimism</b><span>${Number(r.eth).toFixed(5)}</span>`;
+      kv.innerHTML = `<b>Custody</b><span>${r.custody}</span><b>FID</b><span>${r.fid || 'none'}${p?.username ? ` (@${esc(p.username)})` : ''}</span>`;
       if (!r.fid) err.textContent = 'No Farcaster account belongs to this phrase.';
-      else if (r.balance === 0n) err.textContent = 'Send a little ETH on Optimism (about $1) to the custody address above to pay for the transaction.';
       else addBtn.disabled = false;
     } catch (e) {
       err.textContent = (e as Error).message.includes('mnemonic') ? 'That does not look like a valid recovery phrase.' : (e as Error).message;
@@ -429,10 +428,8 @@ function viewSetup() {
   addBtn.addEventListener('click', async () => {
     addBtn.disabled = true; err.textContent = '';
     try {
-      const { stored, tx } = await addAppKey(ta.value, (s) => (status.textContent = s + '…'));
+      const { stored } = await addAppKey(ta.value, (s) => (status.textContent = s + '…'));
       ta.value = '';
-      status.innerHTML = `Transaction confirmed: <a href="https://optimistic.etherscan.io/tx/${tx}" target="_blank" rel="noreferrer">${tx.slice(0, 12)}…</a>. Waiting for your node to see the new key…`;
-      for (let i = 0; i < 60 && !(await signerActive(stored.fid, stored.pub)); i++) await new Promise((r) => setTimeout(r, 5000));
       key = stored;
       localStorage.setItem('readFid', String(stored.fid));
       renderMe();
@@ -464,13 +461,19 @@ function viewSettings() {
         <b>Node</b><span>${location.origin}/v1 → your Snapchain read node</span>
       </div>
       <div class="row">
-        ${key ? '<button class="btn" data-a="forget">Remove app key from this browser</button>' : '<button class="btn primary" data-a="connect">Connect account</button>'}
+        ${key ? '<button class="btn" data-a="revoke">Revoke this key on the network</button><button class="btn" data-a="forget">Remove from this browser only</button>' : '<button class="btn primary" data-a="connect">Connect account</button>'}
         <button class="btn" data-a="reset">Sign out</button>
       </div>
-      <p class="muted">Removing the key here only deletes it from this browser. To revoke it on the network, remove it in any client that manages your keys, or call KeyRegistry.remove from your custody address.</p>
+      <p class="muted">Revoking sends a KEY_REMOVE signed by the key itself, so it stops working everywhere. Removing it from this browser only deletes the local copy; the key stays valid until its TTL runs out.</p>
+      <div class="err"></div>
     </div>`);
   s.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).dataset.a;
+    if (a === 'revoke' && key) {
+      revokeKey(key).then(() => { key = null; localStorage.removeItem('readFid'); location.hash = '#/'; renderMe(); route(); })
+        .catch((x) => { s.querySelector('.err')!.textContent = (x as Error).message; });
+      return;
+    }
     if (a === 'forget' || a === 'reset') { forgetKey(); key = null; }
     if (a === 'reset') localStorage.removeItem('readFid');
     if (a === 'connect' || a === 'forget' || a === 'reset') { location.hash = a === 'connect' ? '#/setup' : '#/'; renderMe(); route(); }

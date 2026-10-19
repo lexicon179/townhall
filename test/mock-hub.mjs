@@ -11,7 +11,9 @@ import {
   makeCastAdd, makeUserDataAdd, makeLinkAdd, NobleEd25519Signer, FarcasterNetwork, UserDataType, bytesToHexString,
   KEY_GATEWAY_ADDRESS, ID_REGISTRY_ADDRESS, idRegistryABI,
   SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN, SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_TYPES,
+  GASLESS_KEY_ADD_EIP_712_TYPES, GASLESS_SIGNED_KEY_REQUEST_EIP_712_TYPES, decodeGaslessSignedKeyRequestMetadata,
 } from '@farcaster/core';
+import { recoverTypedDataAddress } from 'viem';
 import { createPublicClient, http as vhttp, decodeAbiParameters, verifyTypedData, parseAbiItem } from 'viem';
 
 const PORT = Number(process.env.PORT || 3999);
@@ -62,12 +64,45 @@ async function syncKeys() {
   }
 }
 
+// ---------- gasless keys (KEY_ADD / KEY_REMOVE), checked the way snapchain describes ----------
+const gasless = new Map(); // fid -> Map(keyHex -> { requestFid, scopes, nonce })
+const userNonce = new Map(); // fid -> highest user nonce
+const appNonces = new Map(); // `${fid}:${requestFid}` -> highest app nonce
+const fidOfAddr = async (a) => Number(await op.readContract({ address: ID_REGISTRY_ADDRESS, abi: idRegistryABI, functionName: 'idOf', args: [a] }));
+async function mergeKeyAdd(m) {
+  const fid = m.data.fid, b = m.data.keyAddBody;
+  if (hex(m.signer) !== hex(b.key)) throw new Error('KEY_ADD envelope must be signed by the key being added');
+  if (b.nonce <= (userNonce.get(fid) ?? 0)) throw new Error('nonce is not greater than stored nonce');
+  if (!b.scopes.length || b.scopes.some((x) => x === MessageType.KEY_ADD || x === MessageType.KEY_REMOVE)) throw new Error('invalid scope');
+  const custody = await recoverTypedDataAddress({ domain: GASLESS_KEY_ADD_EIP_712_TYPES.domain, types: GASLESS_KEY_ADD_EIP_712_TYPES.types, primaryType: 'KeyAdd',
+    message: { fid: BigInt(fid), key: hex(b.key), keyType: b.keyType, scopes: b.scopes, ttl: b.ttl, nonce: b.nonce, deadline: BigInt(b.deadline) }, signature: hex(b.custodySignature) });
+  if ((await fidOfAddr(custody)) !== fid) throw new Error('invalid signature');
+  const md = decodeGaslessSignedKeyRequestMetadata(b.metadata)._unsafeUnwrap();
+  const req = await recoverTypedDataAddress({ domain: GASLESS_SIGNED_KEY_REQUEST_EIP_712_TYPES.domain, types: GASLESS_SIGNED_KEY_REQUEST_EIP_712_TYPES.types, primaryType: 'SignedKeyRequest',
+    message: { requestFid: md.requestFid, key: hex(b.key), deadline: md.deadline }, signature: hex(md.signature) });
+  if (req.toLowerCase() !== md.requestSigner.toLowerCase() || (await fidOfAddr(req)) !== Number(md.requestFid)) throw new Error('invalid signed key request');
+  userNonce.set(fid, b.nonce);
+  (gasless.get(fid) ?? gasless.set(fid, new Map()).get(fid)).set(hex(b.key).toLowerCase(), { requestFid: Number(md.requestFid), scopes: b.scopes, nonce: b.nonce });
+}
+function mergeKeyRemove(m) {
+  const fid = m.data.fid, b = m.data.keyRemoveBody, k = hex(b.key).toLowerCase();
+  const rec = gasless.get(fid)?.get(k); if (!rec) throw new Error('unknown key');
+  if (b.signatureType !== 2 || hex(m.signer).toLowerCase() !== k) throw new Error('only self-revocation is implemented in the mock');
+  const nk = `${fid}:${rec.requestFid}`;
+  if (b.nonce <= (appNonces.get(nk) ?? 0)) throw new Error('nonce is not greater than stored nonce');
+  appNonces.set(nk, b.nonce); gasless.get(fid).delete(k);
+}
+
 async function merge(m) {
   const v = await validations.validateMessage(m);
   if (v.isErr()) throw new Error(v.error.message);
+  if (m.data.type === MessageType.KEY_ADD) return mergeKeyAdd(m);
   await syncKeys();
   const k = hex(m.signer).toLowerCase();
-  if (!signers.get(m.data.fid)?.has(k)) throw new Error(`invalid signer: ${k} is not an active key of fid ${m.data.fid}`);
+  const g = gasless.get(m.data.fid)?.get(k);
+  if (!signers.get(m.data.fid)?.has(k) && !g) throw new Error(`invalid signer: ${k} is not an active key of fid ${m.data.fid}`);
+  if (m.data.type === MessageType.KEY_REMOVE) return mergeKeyRemove(m);
+  if (g && !g.scopes.includes(m.data.type)) throw new Error(`key not scoped for ${messageTypeToJSON(m.data.type)}`);
   const t = m.data.type;
   // removes delete their target
   if (t === MessageType.CAST_REMOVE) { const h = hex(m.data.castRemoveBody.targetHash); drop((x) => x.data.type === MessageType.CAST_ADD && hex(x.hash) === h); }
@@ -125,7 +160,14 @@ const routes = {
   '/v1/reactionById': (p) => { const m = of(MessageType.REACTION_ADD, p.fid).find((x) => hex(x.data.reactionBody.targetCastId.hash) === p.target_hash && reactionTypeToJSON(x.data.reactionBody.type).endsWith(p.reaction_type.toUpperCase())); if (!m) throw 404; return toJson(m); },
   '/v1/userDataByFid': (p) => ({ messages: of(MessageType.USER_DATA_ADD, p.fid).map(toJson) }),
   '/v1/userNameProofByName': (p) => { const fid = names.get(p.name); if (!fid) throw 404; return { name: p.name, fid, type: 'USERNAME_TYPE_FNAME' }; },
-  '/v1/signersByFid': async (p) => { await syncKeys(); return { signers: [...(signers.get(Number(p.fid)) ?? new Map())].map(([key, requestFid]) => ({ source: 'SIGNER_SOURCE_ONCHAIN', key, keyType: 1, fid: Number(p.fid), requestFid })) }; },
+  '/v1/signersByFid': async (p) => {
+    await syncKeys(); const fid = Number(p.fid);
+    const on = [...(signers.get(fid) ?? new Map())].map(([key, requestFid]) => ({ source: 'SIGNER_SOURCE_ONCHAIN', key, keyType: 1, fid, requestFid }));
+    const off = [...(gasless.get(fid) ?? new Map())].map(([key, r]) => ({ source: 'SIGNER_SOURCE_OFFCHAIN', key, keyType: 1, fid, requestFid: r.requestFid, nonce: r.nonce, scopes: r.scopes.map(messageTypeToJSON) }));
+    const out = { signers: [...on, ...off], currentUserNonce: userNonce.get(fid) ?? 0 };
+    if (p.requesterFids) out.requesterFidNonces = { [p.requesterFids]: appNonces.get(`${fid}:${p.requesterFids}`) ?? 0 };
+    return out;
+  },
 };
 
 // ---------- stand-in for the Farcaster client API (signed key requests) ----------

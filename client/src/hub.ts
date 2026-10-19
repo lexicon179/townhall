@@ -151,3 +151,15 @@ export async function signerActive(fid: number, key: string): Promise<boolean> {
   return (await get<any>('signersByFid', { fid, pageSize: 100 }).catch(() => ({ signers: [] }))).signers
     .some((s: any) => String(s.key).toLowerCase() === key.toLowerCase());
 }
+
+/** All keys of an fid (onchain and gasless KEY_ADD), plus the nonce the next KEY_ADD must exceed. */
+export async function signers(fid: number): Promise<{ signers: any[]; currentUserNonce: number }> {
+  const r = await get<any>('signersByFid', { fid, pageSize: 100 });
+  return { signers: r.signers ?? [], currentUserNonce: Number(r.currentUserNonce ?? 0) };
+}
+
+/** App nonce for keys requested by `requestFid` (used by self-revocation). */
+export async function appNonce(fid: number, requestFid: number): Promise<number> {
+  const r = await get<any>('signersByFid', { fid, pageSize: 1, requesterFids: requestFid });
+  return Number(r.requesterFidNonces?.[String(requestFid)] ?? 0);
+}
