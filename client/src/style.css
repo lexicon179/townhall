@@ -164,3 +164,4 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 /* voters */
 .voted { font-size: 12px; font-weight: 600; color: var(--signal); border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent); border-radius: 999px; padding: 0 7px; line-height: 18px; }
 .chip.voters:not(.off) { background: var(--signal); border-color: var(--signal); color: #fff; }
+.seg .chip.off { text-decoration: none; }

@@ -298,7 +298,7 @@ async function viewReplies() {
   if (!fid) return viewSetup();
   const everyone = localStorage.getItem('repliesEveryone') === '1';
   $view.innerHTML = '';
-  const head = h(`<div class="sources"><span class="sources-label">Replies and mentions from</span><div class="chips">
+  const head = h(`<div class="sources"><span class="sources-label">Replies and mentions from</span><div class="chips seg">
     <button class="chip ${everyone ? 'off' : ''}" data-v="0">mutuals</button><button class="chip ${everyone ? '' : 'off'}" data-v="1">everyone</button></div></div>`);
   head.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-v]');
