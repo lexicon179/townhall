@@ -41,9 +41,11 @@ $SUDO curl -fsSL "$RAW/docker-compose.mainnet.yml" -o docker-compose.yml
 $SUDO curl -fsSL "$RAW/validators.toml" -o validators.toml
 grep -q 'read_node = true' docker-compose.yml || die "Unexpected compose file: it is not configured as a read node."
 
-# 4. Start only the node (the compose file also defines optional metrics services)
+# 4. Start the node and the small metrics sink it reports to. The official config
+#    points the node at statsd:8125 and the node exits if that name doesn't resolve.
+#    (Grafana stays off; the firewall keeps the statsd ports private.)
 say "Starting the node"
-$SUDO docker compose up -d snapchain
+$SUDO docker compose up -d snapchain statsd
 
 # 5. Wait until the HTTP API answers
 for _ in $(seq 1 60); do
