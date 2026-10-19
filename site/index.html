@@ -116,7 +116,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <li>Installs Docker.</li>
   <li>Finds the disk with the most free space (your 2 TB volume) and puts the node there.</li>
   <li>Downloads the <b>official</b> <code>docker-compose.mainnet.yml</code> and <code>validators.toml</code> from the latest <a href="https://github.com/farcasterxyz/snapchain/releases">Snapchain release</a>, unchanged. That file already configures a read node (<code>read_node = true</code>).</li>
-  <li>Starts the node. It first downloads a ~200 GB snapshot of the network, then replays recent blocks from peers until it catches up.</li>
+  <li>Starts the node. It first downloads a snapshot of the network, then replays recent blocks from peers until it catches up.</li>
   <li>Installs <code>townhall-status</code>, a one-word command that shows how far behind each shard is.</li>
 </ol>
 <!-- REAL_STATUS_OUTPUT: paste output from the live run here -->
