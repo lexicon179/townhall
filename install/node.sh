@@ -53,6 +53,16 @@ for _ in $(seq 1 60); do
   sleep 5
 done
 
+# 6. First sync on a disk smaller than 2 TB: the node keeps every downloaded
+#    snapshot file until the very end. The guard frees what it has finished with.
+if [ ! -d "$NODE_DIR/.rocks/shard-1" ] || [ -d "$NODE_DIR/.rocks.snapshot" ]; then
+  $SUDO curl -fsSL "https://raw.githubusercontent.com/lexicon179/townhall/main/install/snapshot-guard.sh" -o /usr/local/bin/townhall-snapshot-guard
+  $SUDO chmod +x /usr/local/bin/townhall-snapshot-guard
+  $SUDO systemctl stop townhall-snapshot-guard >/dev/null 2>&1 || true
+  $SUDO systemd-run --unit=townhall-snapshot-guard /usr/local/bin/townhall-snapshot-guard "$NODE_DIR" >/dev/null
+  say "Snapshot guard running (frees snapshot files as soon as the node is done with them)"
+fi
+
 # A small status helper you can run any time: `townhall-status`
 $SUDO tee /usr/local/bin/townhall-status >/dev/null <<'EOS'
 #!/usr/bin/env bash
