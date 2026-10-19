@@ -181,10 +181,10 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <li>You press Cast. The browser builds a <code>CAST_ADD</code> message with your FID, the text and mentions, hashes it, signs it with your app key, and encodes it as protobuf.</li>
   <li>It is posted to <code>/v1/submitMessage</code> on your server, which Caddy forwards to your read node.</li>
   <li>Your node validates it: FID exists, the key is active for that FID, hash and signature are correct, you have storage. If anything is wrong it answers with an error right away.</li>
-  <li>A read node keeps no mempool, so it relays the valid message to the validators over gossip.</li>
+  <li>A read node keeps no mempool, so it relays the valid message to the validators over gossip (the <code>mempool</code> topic).</li>
   <li>A validator includes it in a block. Your node syncs that block and the cast shows up in your feed, usually within seconds.</li>
 </ol>
-<div class="note">Why not send writes straight to a validator? The validators' public endpoints are not open for direct submission (the Farcaster team's own node is password protected to prevent abuse). Submitting to your own read node, which relays over gossip, is the permissionless path. A 200 response means "valid and relayed", not "in a block yet"; under heavy load a relayed message can be dropped and needs resubmitting.</div>
+<div class="note">Read nodes and validators both accept <code>submitMessage</code>. A validator puts the message in its own mempool; a read node keeps no mempool, so it validates the message, gossips it on the <code>mempool</code> topic, and keeps nothing. That is why a 200 means "valid and relayed", not "in a block yet": if the gossip is lost under heavy load, resubmit. To confirm inclusion, read the message back from your node. Key messages (<code>KEY_ADD</code>, <code>KEY_REMOVE</code>) are routed to shard 0; casts, reactions and follows go to a message shard picked from your FID. Source: <a href="https://snapchain.farcaster.xyz/node-types">Validators vs. read nodes</a>.</div>
 
 <h2 id="security">Security model</h2>
 <ul>
