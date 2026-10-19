@@ -74,10 +74,20 @@ if [ -z "$FW_ID" ]; then
     {direction:"in",protocol:"udp",port:"3382",source_ips:["0.0.0.0/0","::/0"],description:"snapchain gossip"}]}')" | jq -r .firewall.id)
 fi
 
-say "Creating server '$NAME' ($SERVER_TYPE, $LOCATION, Ubuntu 24.04) with a ${VOLUME_GB} GB volume"
 echo "  This is billed by Hetzner while it exists. Delete it in the Hetzner console when you are done."
-SERVER=$(hc POST /servers "$(jq -n --arg n "$NAME" --arg t "$SERVER_TYPE" --arg l "$LOCATION" --argjson k "$KEY_ID" --argjson f "$FW_ID" \
-  '{name:$n, server_type:$t, location:$l, image:"ubuntu-24.04", ssh_keys:[$k], firewalls:[{firewall:$f}], start_after_create:true}')")
+# A location can be temporarily out of a server type ("error during placement").
+# Try the chosen one first, then the other EU locations.
+SERVER=""
+for LOC in $LOCATION $(printf '%s\n' fsn1 nbg1 hel1 | grep -vx "$LOCATION"); do
+  say "Creating server '$NAME' ($SERVER_TYPE, $LOC, Ubuntu 24.04) with a ${VOLUME_GB} GB volume"
+  BODY=$(jq -n --arg n "$NAME" --arg t "$SERVER_TYPE" --arg l "$LOC" --argjson k "$KEY_ID" --argjson f "$FW_ID" \
+    '{name:$n, server_type:$t, location:$l, image:"ubuntu-24.04", ssh_keys:[$k], firewalls:[{firewall:$f}], start_after_create:true}')
+  OUT=$(curl -sS -X POST "$API/servers" -H "Authorization: Bearer $HCLOUD_TOKEN" -H 'Content-Type: application/json' --data "$BODY" -w '\n%{http_code}')
+  CODE=$(tail -n1 <<<"$OUT"); OUT=$(sed '$d' <<<"$OUT")
+  if [ "$CODE" -lt 400 ]; then SERVER="$OUT"; LOCATION="$LOC"; break; fi
+  echo "  $LOC: $(jq -r '.error.message // .' <<<"$OUT")"
+done
+[ -n "$SERVER" ] || die "No capacity for $SERVER_TYPE right now. Try again in a while, or set SERVER_TYPE (e.g. SERVER_TYPE=cpx42)."
 SERVER_ID=$(jq -r .server.id <<<"$SERVER")
 IP=$(jq -r .server.public_net.ipv4.ip <<<"$SERVER")
 
