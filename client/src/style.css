@@ -257,3 +257,5 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 @keyframes g-look { 0%, 100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
 @keyframes g-z { 0% { opacity: 0; transform: translate(0, 4px) scale(0.8); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(8px, -10px) scale(1.2); } }
 @media (prefers-reduced-motion: reduce) { .g-eyes, .g-pupils, .zzz { animation: none !important; } }
+
+.guest .btn { white-space: nowrap; flex: none; }

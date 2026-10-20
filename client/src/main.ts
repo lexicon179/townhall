@@ -132,7 +132,8 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
   const parent = body.parentCastId;
   const parentName = parent && opts.showParent !== false ? (await profile(parent.fid)).username || `fid:${parent.fid}` : null;
   const images = (body.embeds ?? []).filter((e) => e.url && /\.(png|jpe?g|gif|webp)(\?|$)|imagedelivery\.net/i.test(e.url));
-  const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e));
+  // a link already written in the text is not repeated as an embed under it
+  const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e) && !(body.text || '').includes(e.url));
   const quoted = opts.nested ? [] : (body.embeds ?? []).filter((e) => e.castId).slice(0, 1);
   const mine = key && c.data.fid === key.fid;
 
