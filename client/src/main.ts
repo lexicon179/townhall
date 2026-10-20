@@ -27,7 +27,9 @@ const ago = (d: Date) => {
   if (s < 60) return 'now';
   if (s < 3600) return `${Math.floor(s / 60)}m`;
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d`;
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString('en-US', sameYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
 };
 async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -95,9 +97,9 @@ async function nodeStatus() {
 
 async function renderMe() {
   const f = myFid();
-  if (!f) { $me.innerHTML = cfg.signin || cfg.defaultFid ? '<a class="btn primary sm" href="#/setup">Sign in</a>' : ''; return; }
+  if (!f) { $me.innerHTML = cfg.signin || cfg.defaultFid ? '<a href="#/search">Search</a><a class="btn primary sm" href="#/setup">Sign in</a>' : ''; return; }
   const p = await profile(f);
-  $me.innerHTML = `<a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
+  $me.innerHTML = `<a href="#/search" aria-label="Search">Search</a><a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
 }
 
 // ---------- cast rendering ----------
@@ -449,6 +451,31 @@ function viewSetup() {
   }
 }
 
+function viewSearch(initial = '') {
+  $view.innerHTML = '';
+  const box = h(`
+    <section class="option main">
+      <h2>Find someone</h2>
+      <p class="muted">Type a username (dwr, balajis.eth) or an FID. Your node looks it up; nothing goes to anyone else.</p>
+      <form class="field"><input type="search" placeholder="username or FID" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn primary">Find</button></form>
+      <div class="err"></div>
+    </section>`);
+  const input = box.querySelector('input')!, err = box.querySelector('.err')!;
+  const go = async () => {
+    const v = input.value.trim().replace(/^@/, '').toLowerCase();
+    if (!v) return;
+    err.textContent = '';
+    const fid = /^\d+$/.test(v) ? Number(v) : await fidByName(v);
+    if (!fid) { err.textContent = `No account named "${v}" on your node. Check the spelling; names ending in .eth need the .eth.`; return; }
+    location.hash = `#/u/${fid}`;
+  };
+  box.querySelector('form')!.addEventListener('submit', (e) => { e.preventDefault(); go(); });
+  $view.append(box);
+  input.value = initial;
+  input.focus();
+  if (initial) go();
+}
+
 function viewSettings() {
   $view.innerHTML = '';
   const s = h(`
@@ -485,7 +512,12 @@ function viewSettings() {
 async function route() {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
   try {
-    if (parts[0] === 'u' && parts[1]) return await viewProfile(Number(parts[1]));
+    if (parts[0] === 'u' && parts[1]) {
+      const fid = /^\d+$/.test(parts[1]) ? Number(parts[1]) : await fidByName(decodeURIComponent(parts[1]));
+      if (!fid) { $view.innerHTML = `<div class="center">No account named ${esc(decodeURIComponent(parts[1]))} on your node.</div>`; return; }
+      return await viewProfile(fid);
+    }
+    if (parts[0] === 'search') return viewSearch(decodeURIComponent(parts[1] || ''));
     if (parts[0] === 'c' && parts[2]) return await viewThread(Number(parts[1]), parts[2]);
     if (parts[0] === 'settings') return viewSettings();
     if (parts[0] === 'n') return await viewReplies();

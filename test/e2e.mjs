@@ -92,6 +92,19 @@ await p.waitForFunction(() => document.querySelectorAll('.cast').length >= 2, nu
 rt = await p.$$eval('.cast .text', (e) => e.map((x) => x.textContent));
 ok('replies from everyone', rt.includes('who dis'));
 
+// search by username, and by a #/u/<name> link
+await p.goto('http://localhost:3999/#/search');
+await p.fill('input[type=search]', '@Alice');
+await p.press('input[type=search]', 'Enter');
+await p.waitForFunction(() => location.hash === '#/u/100', null, { timeout: 10000 });
+ok('search by username opens the profile', true);
+await p.goto('http://localhost:3999/#/u/bob');
+await p.waitForSelector('.profile', { timeout: 10000 });
+ok('#/u/<username> link opens the profile', (await p.textContent('.profile')).includes('bob'));
+await p.goto('http://localhost:3999/#/search/nobody-here');
+await p.waitForFunction(() => document.querySelector('.err')?.textContent.includes('No account'), null, { timeout: 10000 });
+ok('unknown username says so', true);
+
 // revoke the key on the network (self-signed KEY_REMOVE)
 await p.goto('http://localhost:3999/#/settings');
 const pubBefore = await p.evaluate(() => JSON.parse(localStorage.getItem('appKey')).pub);
