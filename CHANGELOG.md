@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Self-hosted sign-in page offers the same choice: your own keys now, or the Farcaster app with one more command; the guide explains delegated sign-in.
+- The node status line has its own row, so long statuses no longer push the header around.
 - Link previews for shared casts on every install: `client.sh` starts the preview service; `signin.sh` adds sign-in to it.
 - Share: "Link copied" confirmation, and a fallback where the clipboard API is blocked.
 - Windows: PowerShell versions of step 0 and cleanup (`provision.ps1`, `destroy.ps1`); the guide shows Mac/Linux and Windows commands.

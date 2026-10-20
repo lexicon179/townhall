@@ -205,7 +205,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <b>指南</b>
   <a href="#what">你会得到什么</a><a href="#expect">实测数据</a><a href="#before">开始之前</a>
   <a href="#step0">第 0 步 · 服务器</a><a href="#step1">第 1 步 · 节点</a><a href="#step2">第 2 步 · 客户端</a>
-  <a href="#use">使用客户端</a><a href="#concepts">核心概念</a><a href="#writes">一条 cast 的旅程</a>
+  <a href="#use">使用客户端</a><a href="#signin">免助记词登录</a><a href="#concepts">核心概念</a><a href="#writes">一条 cast 的旅程</a>
   <a href="#security">安全</a><a href="#broke">踩过的坑</a><a href="#trouble">故障排查</a>
   <a href="#cost">费用与清理</a><a href="#testers">给测试者</a>
 </aside>
@@ -319,6 +319,15 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
 <p><b>Replies</b> 汇总对你最近 cast 的回复和提及你的 cast，全部从你的节点读取。默认只显示互关的人，也就是你关注且也关注你的人。想看全部时切换到 <i>everyone</i>。</p>
 <h3>在手机上</h3>
 <p>打开你的客户端地址，选择<b>添加到主屏幕</b>（Safari：分享菜单；Chrome：⋮ 菜单）。它会像应用一样全屏打开，依然只和你的节点通信。</p>
+
+<h2 id="signin">可选：不用助记词登录</h2>
+<p>三条命令得到的客户端用你的助记词添加它的密钥。这是最直接的方式，但助记词能控制整个账号，所以请用测试账号。如果别人也会用你的 townhall，或者你根本不想粘贴助记词，可以加上委托登录：用户在 Farcaster 应用里批准 townhall，就像登录任何 Farcaster 应用一样，客户端无需看到助记词就能拿到密钥。</p>
+<pre><code>ssh -t root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | IMPORT=1 bash'</code></pre>
+<ul>
+  <li><b>需要一个应用账号。</b>密钥请求要写明是哪个应用在请求，而应用就是一个 FID。<code>IMPORT=1</code> 会在你的服务器上以隐藏输入的方式，询问一个备用账号的助记词，让它充当应用；只保存它的密钥，存放在只有 root 能读的文件里。不加 <code>IMPORT=1</code> 时，脚本会新建一个密钥，你往它打印的地址转少量 Optimism 上的 ETH 后，为它注册新的 FID。</li>
+  <li><b>用户看到什么。</b>登录页提供两种方式：Farcaster 应用（电脑上扫二维码，手机上点按钮）或自己的密钥。在应用里批准后，密钥被添加到他们的账号；密钥本身在他们的浏览器里生成，也只留在那里。</li>
+  <li><b>你的服务器保存什么。</b>只有应用账号的密钥，用来签署请求。没有用户密钥、没有助记词、没有资金。</li>
+</ul>
 
 <h2 id="concepts">核心概念，用大白话说</h2>
 <dl>

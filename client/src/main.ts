@@ -92,7 +92,7 @@ async function nodeStatus() {
       : `<b>${cfg.signin ? 'Node' : 'Your node'}</b> catching up, ${worst.toLocaleString('en-US')} blocks behind`;
   } catch {
     $node.className = 'node bad';
-    $node.innerHTML = '<b>Your node</b> is starting. On first run it downloads the network, which takes a few hours';
+    $node.innerHTML = '<b>Your node</b> is starting: the first run downloads the network, a few hours';
   }
 }
 
@@ -486,7 +486,7 @@ function viewSetup() {
   // Write: seed phrase -> app key via one Optimism transaction (self-hosted only)
   const w = h(`
     <section class="option">
-      <h2>${cfg.signin ? 'Your keys' : 'Read and post'}</h2>
+      <h2>Your keys</h2>
       <p class="muted">This client posts with its own app key. Your recovery phrase signs one KEY_ADD message that adds the key to your account, then it is cleared from the page. No transaction, no gas.</p>
       <p class="warnbox">Treat a recovery phrase like <code>rm -rf</code>: test with a test account, and only paste it into software you run yourself or from developers you trust. Prefer signing in through an app that holds your account when you can.</p>
       <textarea placeholder="Recovery phrase, 12 or 24 words" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
@@ -551,7 +551,34 @@ function viewSetup() {
     $view.append(h('<div class="hero"><h1>No app can ban you.</h1><p>Farcaster, read from a real node. Sign in the easy way, or hold your own keys.</p></div>'), choice, slot, ro);
     if (resumeSignin()) pick('app');
   } else {
-    $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), ro, w);
+    // Self-hosted without the sign-in service: your own keys work now; the app needs signin.sh.
+    const choice = h(`
+      <section class="choice" role="group" aria-label="How to sign in">
+        <button class="pick on" data-choice="keys">
+          <b>Use your own keys</b>
+          <span>Your recovery phrase signs this client's key directly. Use a test account.</span>
+        </button>
+        <button class="pick" data-choice="app">
+          <b>Sign in with the Farcaster app</b>
+          <span>Approve in the app, no recovery phrase. One more command on your server turns it on.</span>
+        </button>
+      </section>`);
+    const howto = h(`
+      <section class="option">
+        <h2>Sign in with the Farcaster app</h2>
+        <p class="muted">A sign-in request names the app asking for the key, and the app is a Farcaster account. Give your server a spare account to act as the app, and this page offers the Farcaster app as a way in:</p>
+        <pre class="cmd">ssh -t root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | IMPORT=1 bash'</pre>
+        <p class="muted"><a href="https://townhallfc.xyz/#signin" target="_blank" rel="noreferrer">How it works</a></p>
+      </section>`);
+    const slot = h('<div class="choice-slot"></div>');
+    slot.append(w);
+    choice.addEventListener('click', (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLElement>('.pick');
+      if (!b) return;
+      choice.querySelectorAll<HTMLElement>('.pick').forEach((x) => x.classList.toggle('on', x === b));
+      slot.replaceChildren(b.dataset.choice === 'app' ? howto : w);
+    });
+    $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), choice, slot, ro);
   }
 }
 

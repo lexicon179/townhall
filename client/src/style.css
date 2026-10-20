@@ -162,9 +162,8 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .card p { max-width: 56ch; }
 .center { text-align: center; padding: 48px 0; color: var(--muted); }
 
-@media (min-width: 640px) {
-  .node { order: 0; flex-basis: auto; margin-left: 8px; }
-}
+/* the node line gets its own row: its text changes length (syncing, in sync, starting) */
+.node b { white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 .cast > a, .profile > a { text-decoration: none; }
 .pfp, .pfp::before { text-decoration: none; }
@@ -240,3 +239,5 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 @media (max-width: 520px) { .choice { grid-template-columns: 1fr; } }
 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 50; box-shadow: 0 6px 24px rgb(0 0 0 / 0.3); }
+
+.cmd { white-space: pre-wrap; word-break: break-all; font-size: 13px; background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 14px; margin: 0 0 12px; }

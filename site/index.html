@@ -204,7 +204,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <b>Guide</b>
   <a href="#what">What you get</a><a href="#expect">Measured numbers</a><a href="#before">Before you start</a>
   <a href="#step0">Step 0 · Server</a><a href="#step1">Step 1 · Node</a><a href="#step2">Step 2 · Client</a>
-  <a href="#use">Using the client</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a>
+  <a href="#use">Using the client</a><a href="#signin">Sign in without a phrase</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a>
   <a href="#security">Security</a><a href="#broke">What broke</a><a href="#trouble">Troubleshooting</a>
   <a href="#cost">Cost &amp; cleanup</a><a href="#testers">For testers</a>
 </aside>
@@ -320,6 +320,15 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
 <p><b>Replies</b> collects replies to your recent casts and casts that mention you, all read from your node. By default it shows only mutuals, people you follow who follow you back. Switch to <i>everyone</i> when you want the full picture.</p>
 <h3>On your phone</h3>
 <p>Open your client address and choose <b>Add to Home Screen</b> (Safari: Share menu; Chrome: ⋮ menu). It opens full screen like an app, still talking only to your node.</p>
+
+<h2 id="signin">Optional: sign in without a recovery phrase</h2>
+<p>The three commands give you a client that adds its key with your recovery phrase. That is the most direct path, and it is also a phrase that controls your whole account, so use a test account. If other people will use your townhall, or you would rather not paste a phrase at all, add delegated sign-in: people approve townhall in the Farcaster app, the way they sign in to any Farcaster app, and the client gets its key without ever seeing a phrase.</p>
+<pre><code>ssh -t root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | IMPORT=1 bash'</code></pre>
+<ul>
+  <li><b>It needs an app account.</b> A key request names the app asking for the key, and that app is an FID. <code>IMPORT=1</code> asks, in a hidden prompt on your server, for the recovery phrase of a spare account to act as the app; only its key is kept, in a file only root can read. Without <code>IMPORT=1</code> the script makes a new key instead and registers a new FID for it once you send a little ETH on Optimism to the address it prints.</li>
+  <li><b>What people see.</b> The sign-in page offers both ways: the Farcaster app (a QR code on desktop, a button on phones) or your own keys. Approving in the app adds the key to their account; the key itself is made in their browser and stays there.</li>
+  <li><b>What your server holds.</b> Only the app account's key, which signs requests. No user keys, no phrases, no funds.</li>
+</ul>
 
 <h2 id="concepts">Concepts, in plain words</h2>
 <dl>
