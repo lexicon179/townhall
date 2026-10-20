@@ -131,22 +131,27 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 .nodecard b{display:block;font-family:"Fira Mono",ui-monospace,monospace;font-size:19px;font-weight:400}
 .nodecard small{font-size:13px;color:var(--muted)}
 @media (max-width:600px){.nodecard .grid div{padding:12px 12px}.nodecard b{font-size:14.5px}.nodecard small{font-size:12px}}
-.hero{max-width:1120px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:48px;align-items:start}
+.hero{max-width:1120px}
 .hero-txt{min-width:0}
-.hero-garg{position:relative;width:400px;height:400px;margin-top:4px}
-.hero-garg svg{width:100%;height:100%;display:block;filter:drop-shadow(0 0 60px rgba(198,255,61,.18))}
+/* the gargoyle perches on the try box, like one on a ledge */
+.perch{position:relative;max-width:620px;margin-top:190px}
+.perch .try{position:relative;z-index:1;margin-top:0}
+.hero-garg{position:absolute;z-index:0;right:24px;top:-184px;width:300px;height:300px}
+.hero-garg svg{width:100%;height:100%;display:block}
+.g-head{fill:#c6ff3d}.g-mask{fill:#0b0b0c}.g-glow{fill:#c6ff3d}
+:root[data-theme=light] .g-head{fill:#0d0d0f}:root[data-theme=light] .g-mask{fill:#c6ff3d}:root[data-theme=light] .g-glow{fill:#0d0d0f}
 .g-eyes,.g-pupils{transform-box:fill-box;transform-origin:center;transition:transform .35s ease}
 .hero-garg[data-mood=awake] .g-eyes{animation:gblink 6.5s infinite}
 .hero-garg[data-mood=syncing] .g-eyes{transform:scaleY(.55)}
 .hero-garg[data-mood=asleep] .g-eyes{transform:scaleY(.12)}
 .hero-garg[data-mood=asleep] .g-pupils{opacity:0}
-.gz{position:absolute;right:30px;top:20px;font-family:"Fira Mono",monospace;font-weight:600;color:var(--accent);opacity:0;font-size:44px}
-.gz+.gz{right:0;top:-30px;font-size:62px}
+.gz{position:absolute;right:-6px;top:6px;font-family:"Fira Mono",monospace;font-weight:600;color:var(--accent);opacity:0;font-size:30px}
+.gz+.gz{right:-30px;top:-24px;font-size:42px}
 .hero-garg[data-mood=asleep] .gz{animation:gz 2.6s ease-out infinite}
 .hero-garg[data-mood=asleep] .gz+.gz{animation-delay:1.1s}
 @keyframes gblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
 @keyframes gz{0%{opacity:0;transform:translate(0,10px)}30%{opacity:1}100%{opacity:0;transform:translate(16px,-26px)}}
-@media (max-width:900px){.hero{grid-template-columns:1fr;gap:8px}.hero-garg{order:-1;width:200px;height:200px;margin:0 0 4px -12px}.gz{font-size:28px;right:20px;top:10px}.gz+.gz{font-size:38px;right:0;top:-14px}}
+@media (max-width:600px){.perch{margin-top:118px}.hero-garg{width:170px;height:170px;top:-104px;right:16px}}
 @media (prefers-reduced-motion:reduce){.hero-garg *{animation:none!important;transition:none!important}}
 .qsh{margin:0 0 14px}
 .proof{max-width:1120px;margin:0 auto;padding:8px 24px 24px}
@@ -181,12 +186,11 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <h1>没有任何应用能<span class="hl">封禁</span>你。</h1>
   <p class="lead2">你自己的 Farcaster 客户端和 Snapchain 节点，三条命令搞定。</p>
   <p class="sub">一切都运行在你自己控制的服务器上，不依赖任何人的 API 密钥。今晚敲十分钟命令，明天下午就同步完成。</p>
-  <form class="try" id="try"><input name="u" placeholder="你的 Farcaster 用户名" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="你的 Farcaster 用户名"><button type="submit">打开我的信息流</button></form>
+  <div class="perch"><div class="hero-garg" id="garg" data-mood="awake" aria-hidden="true"><svg viewBox="0 0 100 100"><g transform="translate(10 8) scale(.8)"><path class="g-head" d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z"/><g class="g-eyes"><path class="g-mask" d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z"/><path class="g-pupils g-glow" d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z"/></g><rect class="g-mask" x="28" y="70" width="44" height="12" rx="3"/><path class="g-glow" d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z"/></g></svg><span class="gz">z</span><span class="gz">z</span></div><form class="try" id="try"><input name="u" placeholder="你的 Farcaster 用户名" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="你的 Farcaster 用户名"><button type="submit">打开我的信息流</button></form></div>
   <p class="try-note">只读，直接来自我们的节点，无需签名。<a href="#quickstart">或者用三条命令运行你自己的 ↓</a></p>
   <div class="nodecard" id="nodecard" aria-live="polite"><div class="hd"><i></i>演示节点<span data-k="st">连接中…</span></div><div class="grid"><div><b data-k="h">—</b><small>区块</small></div><div><b data-k="m">—</b><small>已存储消息</small></div><div><b data-k="a">—</b><small>账号</small></div></div></div>
   <p class="small zh-note">本页为机器辅助翻译，英文版为准。欢迎在 <a href="https://github.com/townhall-fc/townhall">GitHub</a> 提交修正。</p>
 </div>
-<div class="hero-garg" id="garg" data-mood="awake" aria-hidden="true"><svg viewBox="0 0 100 100"><g transform="translate(10 8) scale(.8)"><path d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z" fill="#c6ff3d"/><g class="g-eyes"><path d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z" fill="#0b0b0c"/><path class="g-pupils" d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z" fill="#c6ff3d"/></g><rect x="28" y="70" width="44" height="12" rx="3" fill="#0b0b0c"/><path d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z" fill="#c6ff3d"/></g></svg><span class="gz">z</span><span class="gz">z</span></div>
 </header>
 
 <section id="proof" class="proof">
