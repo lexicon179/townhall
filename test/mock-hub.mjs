@@ -8,7 +8,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import {
   Message, validations, messageTypeToJSON, reactionTypeToJSON, farcasterNetworkToJSON, MessageType,
-  makeCastAdd, makeUserDataAdd, makeLinkAdd, NobleEd25519Signer, FarcasterNetwork, UserDataType, bytesToHexString,
+  makeCastAdd, makeCastRemove, makeUserDataAdd, makeLinkAdd, NobleEd25519Signer, FarcasterNetwork, UserDataType, bytesToHexString,
   KEY_GATEWAY_ADDRESS, ID_REGISTRY_ADDRESS, idRegistryABI,
   SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN, SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_TYPES,
   GASLESS_KEY_ADD_EIP_712_TYPES, GASLESS_SIGNED_KEY_REQUEST_EIP_712_TYPES, decodeGaslessSignedKeyRequestMetadata,
@@ -40,6 +40,7 @@ function toJson(m) {
       ...(b.parentUrl ? { parentUrl: b.parentUrl } : {}),
     };
   }
+  if (d.castRemoveBody) out.castRemoveBody = { targetHash: hex(d.castRemoveBody.targetHash) };
   if (d.reactionBody) out.reactionBody = { type: reactionTypeToJSON(d.reactionBody.type), targetCastId: { fid: d.reactionBody.targetCastId.fid, hash: hex(d.reactionBody.targetCastId.hash) } };
   if (d.linkBody) out.linkBody = { type: d.linkBody.type, targetFid: d.linkBody.targetFid };
   if (d.userDataBody) out.userDataBody = { type: { 1: 'USER_DATA_TYPE_PFP', 2: 'USER_DATA_TYPE_DISPLAY', 3: 'USER_DATA_TYPE_BIO', 6: 'USER_DATA_TYPE_USERNAME' }[d.userDataBody.type], value: d.userDataBody.value };
@@ -108,7 +109,7 @@ async function merge(m) {
   if (t === MessageType.CAST_REMOVE) { const h = hex(m.data.castRemoveBody.targetHash); drop((x) => x.data.type === MessageType.CAST_ADD && hex(x.hash) === h); }
   if (t === MessageType.REACTION_REMOVE || t === MessageType.REACTION_ADD) { const b = m.data.reactionBody; drop((x) => x.data.fid === m.data.fid && x.data.reactionBody && x.data.reactionBody.type === b.type && hex(x.data.reactionBody.targetCastId.hash) === hex(b.targetCastId.hash)); }
   if (t === MessageType.LINK_REMOVE || t === MessageType.LINK_ADD) { drop((x) => x.data.fid === m.data.fid && x.data.linkBody && x.data.linkBody.targetFid === m.data.linkBody.targetFid); }
-  if ([MessageType.CAST_ADD, MessageType.REACTION_ADD, MessageType.LINK_ADD, MessageType.USER_DATA_ADD].includes(t)) msgs.push(m);
+  if ([MessageType.CAST_ADD, MessageType.CAST_REMOVE, MessageType.REACTION_ADD, MessageType.LINK_ADD, MessageType.USER_DATA_ADD].includes(t)) msgs.push(m);
 }
 const drop = (f) => { for (let i = msgs.length - 1; i >= 0; i--) if (f(msgs[i])) msgs.splice(i, 1); };
 
@@ -128,7 +129,9 @@ async function seed() {
   };
   await mk(app, 'farcaster', 'Farcaster', []);
   await mk(100, 'alice', 'Alice', ['gm from the main app', 'running my own node this weekend']);
-  await mk(200, 'bob', 'Bob', ['options > perps']);
+  await mk(200, 'bob', 'Bob', ['options > perps', 'oops, typo']);
+  { const del = of(MessageType.CAST_ADD, 200).at(-1); // bob deletes his last cast, like real users do
+    msgs.push((await makeCastRemove({ targetHash: del.hash }, { fid: 200, network: FarcasterNetwork.MAINNET }, seedSigners.get(200)))._unsafeUnwrap()); drop((x) => x === del); }
   await mk(4242, 'mike', 'Mike', []); // the test user's profile (written by their old app)
   msgs.push((await makeLinkAdd({ type: 'follow', targetFid: 200 }, { fid: 100, network: FarcasterNetwork.MAINNET }, seedSigners.get(100)))._unsafeUnwrap()); // alice follows bob (the signed-out feed)
   names.set('mike', 4242);
@@ -141,7 +144,8 @@ const of = (type, fid) => msgs.filter((m) => m.data.type === type && (fid === un
 
 const routes = {
   '/v1/info': () => ({ shardInfos: [{ shardId: 0, blockDelay: 0 }, { shardId: 1, blockDelay: 0 }, { shardId: 2, blockDelay: 0 }] }),
-  '/v1/castsByFid': (p) => ({ messages: page(of(MessageType.CAST_ADD, p.fid), p).map(toJson) }),
+  // like the real node, castsByFid also returns CAST_REMOVE messages
+  '/v1/castsByFid': (p) => ({ messages: page(msgs.filter((m) => [MessageType.CAST_ADD, MessageType.CAST_REMOVE].includes(m.data.type) && m.data.fid === Number(p.fid)), p).map(toJson) }),
   '/v1/castById': (p) => { const m = of(MessageType.CAST_ADD, p.fid).find((x) => hex(x.hash) === p.hash); if (!m) throw 404; return toJson(m); },
   '/v1/castsByParent': (p) => ({ messages: of(MessageType.CAST_ADD).filter((m) => m.data.castAddBody.parentCastId && hex(m.data.castAddBody.parentCastId.hash) === p.hash).map(toJson) }),
   '/v1/linksByFid': (p) => ({ messages: page(of(MessageType.LINK_ADD, p.fid), p).map(toJson) }),

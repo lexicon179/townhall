@@ -34,14 +34,17 @@ export const toDate = (t: number) => new Date((t + FARCASTER_EPOCH) * 1000);
 
 export const info = () => get<any>('info', {});
 
+const onlyCasts = (ms?: CastMsg[]) => (ms ?? []).filter((m) => m?.data?.castAddBody);
+
 export async function castsByFid(fid: number, pageSize = 5): Promise<CastMsg[]> {
-  const r = await get<{ messages: CastMsg[] }>('castsByFid', { fid, pageSize, reverse: true });
-  return r.messages ?? [];
+  // The node returns CAST_REMOVE messages in the same list (deleted casts); keep only live casts.
+  const r = await get<{ messages: CastMsg[] }>('castsByFid', { fid, pageSize: pageSize * 2, reverse: true });
+  return onlyCasts(r.messages).slice(0, pageSize);
 }
 
 export async function castsByParent(fid: number, hash: string): Promise<CastMsg[]> {
   const r = await get<{ messages: CastMsg[] }>('castsByParent', { fid, hash, pageSize: 50 });
-  return r.messages ?? [];
+  return onlyCasts(r.messages);
 }
 
 export async function following(fid: number, max = 200): Promise<number[]> {
@@ -73,7 +76,7 @@ export async function followers(fid: number, max = 3000): Promise<number[]> {
 /** Casts that @mention this account. */
 export async function castsByMention(fid: number, pageSize = 50): Promise<CastMsg[]> {
   const r = await get<{ messages: CastMsg[] }>('castsByMention', { fid, pageSize, reverse: true });
-  return r.messages ?? [];
+  return onlyCasts(r.messages);
 }
 
 export async function isFollowing(fid: number, target: number): Promise<boolean> {

@@ -82,7 +82,8 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <h1>townhall</h1>
 <p class="tag">No app can ban you.</p>
 <p class="sub">No app between you and Farcaster: your own client and Snapchain read node, in three commands.</p>
-<div class="btns"><a class="p" href="#quickstart">Run your own</a><a class="s" href="#what">Read the guide</a></div>
+<div class="btns"><a class="p" href="#quickstart">Run your own</a><a class="s" href="https://159-69-253-226.sslip.io">Open the live demo</a></div>
+<p class="small" style="margin-top:12px">The demo is the author's own node and client, running from these exact scripts.</p>
 </div>
 
 <h2 id="quickstart">Quickstart</h2>
@@ -91,7 +92,20 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <p>It prints your server's IP. Then:</p>
 <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash'</code></pre>
 <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash'</code></pre>
-<p>Open the <code>https://…sslip.io</code> address the last command prints. Your node needs a few hours to sync; the client shows its progress in the top bar.</p>
+<p>Open the <code>https://…sslip.io</code> address the last command prints. The client shows your node's progress in the top bar. Done testing? One more command deletes the server and the volume so billing stops:</p>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+
+<h3 id="expect">What to expect, measured</h3>
+<p>From the demo node: Hetzner <code>cx43</code> (8 vCPU, 16 GB) in Falkenstein with a 1 TB volume, October 2026, Snapchain 0.14.3.</p>
+<table>
+  <tr><th></th><th>Measured</th></tr>
+  <tr><td>Hands-on time</td><td>About 10 minutes</td></tr>
+  <tr><td>Snapshot download and unpack</td><td>About 11 hours. The snapshot is about 5,700 chunks, roughly 445 GB compressed.</td></tr>
+  <tr><td>Catching up after the snapshot</td><td>About 10 hours. The node replays the blocks made since the snapshot, around 290 blocks a minute faster than the chain grows.</td></tr>
+  <tr><td>From <code>node.sh</code> to in sync</td><td>Under 22 hours. Start in the evening, use it the next afternoon.</td></tr>
+  <tr><td>Disk</td><td>Peak about 800 GB while unpacking. About 560 GB once synced: 914 million messages from 3.36 million FIDs.</td></tr>
+  <tr><td>Adding the app key</td><td>One <code>KEY_ADD</code>, active about 10 seconds later. No gas.</td></tr>
+</table>
 <div class="note">Already have a server (any provider, Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 2 TB disk)? Skip the first command and run the other two on it.</div>
 <p class="small">Prefer to read before you run? Every script is short and commented: <a href="https://github.com/lexicon179/townhall/tree/main/install">install/</a>. The client is built from source on your server, so what runs is what is in the repo.</p>
 
@@ -121,11 +135,11 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <h2 id="before">Before you start</h2>
 <table>
   <tr><th>You need</th><th>Why</th><th>How</th></tr>
-  <tr><td>A server with 4 vCPU, 16 GB RAM, 2 TB disk</td><td>Snapchain's documented requirements. The disk holds the whole network.</td><td>Step 0 creates one on Hetzner. Create an account, a project, then <i>Security → API tokens → Generate</i> with Read &amp; Write.</td></tr>
+  <tr><td>A server with 4 vCPU, 16 GB RAM and a 1 TB disk</td><td>Snapchain documents 2 TB. 1 TB is enough to sync today: the demo node peaked at about 800 GB (see <a href="#expect">measured</a>). Use 2 TB if you keep the node for months, since the network keeps growing.</td><td>Step 0 creates one on Hetzner. Create an account, a project, then <i>Security → API tokens → Generate</i> with Read &amp; Write.</td></tr>
   <tr><td>A Farcaster <b>test</b> account that has storage, and its recovery phrase</td><td>Only to post. The phrase signs one <code>KEY_ADD</code> message that adds your app key. No gas. Read-only mode needs just a username.</td><td>In the Farcaster app settings, under Advanced → Recovery phrase. Check its storage on your node: <code>/v1/storageLimitsByFid?fid=…</code>.</td></tr>
   <tr><td>A terminal with <code>curl</code>, <code>jq</code>, <code>ssh</code></td><td>To run the three commands.</td><td>macOS: <code>brew install jq</code>. Ubuntu: <code>sudo apt install jq</code>.</td></tr>
 </table>
-<p>Hands-on time is about 10 minutes. The node then syncs on its own for a few hours.</p>
+<p>Hands-on time is about 10 minutes. The node then syncs on its own, for most of a day.</p>
 
 <h2 id="step0">Step 0 · Get a server</h2>
 <pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
@@ -228,6 +242,18 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <h3>What "no app can ban you" means, and where it stops</h3>
 <p>Your account belongs to your custody key, not to any app. If an app hides you or shuts down, your casts, follows and profile are still on the network, and this client reads and posts them through your own node. What it does not change: blocks are produced by a small, fixed set of Snapchain validators, which in principle could refuse your messages, and the network only accepts messages from FIDs with storage rent paid. Your node makes you independent of apps and API providers, not of the protocol's own rules.</p>
 
+<h2 id="broke">What broke when we built this</h2>
+<p>Every one of these happened on the way to the demo node. Each is now handled by the scripts, but it helps to know why.</p>
+<ul>
+  <li><b>Hetzner said "error during placement".</b> The datacenter had no capacity for that server type. Step 0 now tries Falkenstein, then Nuremberg, then Helsinki.</li>
+  <li><b>Hetzner refused a 2 TB volume.</b> New accounts are capped at 1 TB of volumes, and a limit increase was refused because the account was too new. Step 0 now falls back to the largest size allowed, and the guard below makes 1 TB enough.</li>
+  <li><b>The snapshot did not fit.</b> Snapchain keeps every downloaded chunk, writes a full tar per shard, then unpacks it, and only cleans up at the very end. On one shard that peaks at roughly 1.5 TB. <code>node.sh</code> now starts a small guard that deletes chunks and tars as soon as the node is done with them, so the peak stays near 800 GB.</li>
+  <li><b>The node crash-looped with a metrics error.</b> The official mainnet compose file points metrics at a <code>statsd</code> service that has to be started too. <code>node.sh</code> starts both.</li>
+  <li><b>A <code>df</code> flag mix-up</b> (<code>-P</code> with <code>--output</code>) stopped the disk check on Ubuntu. Fixed.</li>
+  <li><b>App keys changed mid-build.</b> The first version added the key with an Optimism transaction and asked for $1 of ETH. Snapchain now accepts gasless keys (<code>KEY_ADD</code>), so that step and the ETH are gone.</li>
+  <li><b>Recovery phrase confusion.</b> The Farcaster app has two phrases: the account's recovery phrase and the wallet's. Only the account one owns your FID; the client shows the custody address and FID so you can tell before anything is signed.</li>
+</ul>
+
 <h2 id="trouble">Troubleshooting</h2>
 <table>
   <tr><th>You see</th><th>Do this</th></tr>
@@ -243,8 +269,22 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 </table>
 
 <h2 id="cost">Cost &amp; cleanup</h2>
-<p>Most of the cost is the 2 TB disk. Hetzner Cloud bills by the hour. With the cheapest 4 vCPU / 16 GB server plus a 2 TB volume, that was about €6 a day (≈€180 a month, ≈€45 for a one-week test) when this was written; check current prices in the Hetzner console. A dedicated server with large disks is cheaper if you keep the node running. Adding the app key costs nothing.</p>
-<p>To stop paying: delete the server <b>and</b> the volume in the Hetzner console. Your Farcaster account is unaffected; to also revoke the app key, see <a href="#security">security</a>.</p>
+<p>Hetzner Cloud bills by the hour, for the server and for the volume. The demo node (server plus 1 TB volume) came to about $2 for its first 12 hours, so a full test run costs a few dollars. Running it for a month is roughly a hundred-odd dollars; check current prices in the Hetzner console. A dedicated server with large disks is cheaper if you keep the node for good. Adding the app key costs nothing.</p>
+<p>To stop paying, delete the server <b>and</b> the volume. This does it and asks you to confirm first:</p>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<p>Your Farcaster account is unaffected. To also revoke the app key, use Settings → Revoke in the client before you delete the server.</p>
+
+<h2 id="testers">Testing this tutorial for someone?</h2>
+<p>Thank you. A useful test report is honest, including what failed. Please:</p>
+<ol class="steps">
+  <li>Use a <b>test</b> Farcaster account that has storage, never one that matters to you.</li>
+  <li>Run the three commands from a clean machine and note the times.</li>
+  <li>Once the client says the node is in sync: post a cast, follow someone, like something, and hide one app's casts with the filter.</li>
+  <li>Open it on your phone too.</li>
+  <li>Run <code>destroy.sh</code> so you stop paying.</li>
+  <li>Post on Farcaster what happened, good and bad, and how long it took.</li>
+</ol>
+<p class="small">Never send your recovery phrase or Hetzner token to anyone, the author included. If you were reimbursed for server costs or your time, say so in your post.</p>
 
 <footer>
   MIT licensed · <a href="https://github.com/lexicon179/townhall">github.com/lexicon179/townhall</a> · Built on the open Farcaster protocol and Snapchain. Sources: <a href="https://docs.farcaster.xyz/learn/architecture/overview">architecture</a>, <a href="https://snapchain.farcaster.xyz/guides/running-a-node">running a node</a>, <a href="https://docs.neynar.com/snapchain/httpapi/httpapi">HTTP API</a>.
