@@ -110,7 +110,8 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 @media (max-width:600px){.timeline{grid-template-columns:1fr}.stepper .dur{margin-left:0}.hero{padding-top:44px}}
 footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
 td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhere}
-.proof{max-width:860px;margin:0 auto;padding:40px 24px 8px}
+.qsh{margin:0 0 14px}
+.proof{max-width:860px;margin:0 auto;padding:8px 24px 24px}
 .proof h2{margin:0 0 6px}
 .shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 0}
 .shots figure{margin:0}
@@ -144,7 +145,30 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <div class="btns"><a class="p" href="#quickstart">Start</a><a class="s" href="https://app.townhallfc.xyz">See the live demo</a></div>
 </header>
 
+<section id="proof" class="proof">
+  <h2>Real casts, read from the demo node</h2>
+  <p class="small">Screenshots of the demo client on a phone, October 2026. Every cast, reply and avatar came from the node, not from an API. Tap one to open it live.</p>
+  <div class="shots">
+    <figure><a href="https://app.townhallfc.xyz/#/c/3/0x597007de6219f87fdf71ad5769db542c8f2d1dde"><img src="img/cast-dwr.webp" alt="Dan Romero's client wishlist cast and his follow-up reply, in townhall" width="800" height="1130" loading="lazy"></a><figcaption>@dwr's client wishlist, with his own follow-up.</figcaption></figure>
+    <figure><a href="https://app.townhallfc.xyz/#/c/5650/0x9252885364ac7db01ac427e97dd246b7af619949"><img src="img/cast-vitalik.webp" alt="A Vitalik Buterin cast with two image tables and replies, in townhall" width="800" height="1050" loading="lazy"></a><figcaption>@vitalik.eth: images and replies.</figcaption></figure>
+    <figure><a href="https://app.townhallfc.xyz/#/c/129/0xa9c0dfd6c4b17ea8ac6f0a71aaa644fb41e0ef5c"><img src="img/cast-phil.webp" alt="Phil announcing he is shutting down an app, with replies, in townhall" width="800" height="960" loading="lazy"></a><figcaption>@phil shutting down an app. Apps come and go; accounts and casts stay on the network.</figcaption></figure>
+  </div>
+  <div class="wish">
+    <h3>Dan Romero's client wishlist, October 16</h3>
+    <p class="small">What townhall already does from his list:</p>
+    <ol>
+      <li><div>Notifications from mutuals only <span>· Replies shows mutuals by default, with a switch for everyone</span></div></li>
+      <li><div>No channels</div></li>
+      <li><div>No wallet</div></li>
+      <li><div>Reverse-chronological, following-only feed <span>· that is the home feed</span></div></li>
+      <li><div>No mini apps</div></li>
+      <li><div>No DMs</div></li>
+    </ol>
+  </div>
+</section>
+
 <section id="quickstart" class="qs">
+  <h2 class="qsh">Three commands</h2>
   <ol class="stepper">
     <li>
       <div class="sh"><span class="n">0</span><h3>Get a server</h3><span class="where">your computer</span><span class="dur">~3 min</span></div>
@@ -170,27 +194,6 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <p class="small">Measured on the <a href="https://app.townhallfc.xyz">demo node</a>, October 2026. Already have a server (Ubuntu, 4 vCPU, 16 GB RAM, 1 TB disk)? Skip step 0. Done testing? <a href="#cost">One command deletes everything.</a></p>
 </section>
 
-<section id="proof" class="proof">
-  <h2>Real casts, read from the demo node</h2>
-  <p class="small">Screenshots of the demo client on a phone, October 2026. Every cast, reply and avatar came from the node, not from an API. Tap one to open it live.</p>
-  <div class="shots">
-    <figure><a href="https://app.townhallfc.xyz/#/c/3/0x597007de6219f87fdf71ad5769db542c8f2d1dde"><img src="img/cast-dwr.webp" alt="Dan Romero's client wishlist cast and his follow-up reply, in townhall" width="800" height="1130" loading="lazy"></a><figcaption>@dwr's client wishlist, with his own follow-up.</figcaption></figure>
-    <figure><a href="https://app.townhallfc.xyz/#/c/5650/0x9252885364ac7db01ac427e97dd246b7af619949"><img src="img/cast-vitalik.webp" alt="A Vitalik Buterin cast with two image tables and replies, in townhall" width="800" height="1050" loading="lazy"></a><figcaption>@vitalik.eth: images and replies.</figcaption></figure>
-    <figure><a href="https://app.townhallfc.xyz/#/c/129/0xa9c0dfd6c4b17ea8ac6f0a71aaa644fb41e0ef5c"><img src="img/cast-phil.webp" alt="Phil announcing he is shutting down an app, with replies, in townhall" width="800" height="960" loading="lazy"></a><figcaption>@phil shutting down an app. Apps come and go; accounts and casts stay on the network.</figcaption></figure>
-  </div>
-  <div class="wish">
-    <h3>Dan Romero's client wishlist, October 16</h3>
-    <p class="small">What townhall already does from his list:</p>
-    <ol>
-      <li><div>Notifications from mutuals only <span>· Replies shows mutuals by default, with a switch for everyone</span></div></li>
-      <li><div>No channels</div></li>
-      <li><div>No wallet</div></li>
-      <li><div>Reverse-chronological, following-only feed <span>· that is the home feed</span></div></li>
-      <li><div>No mini apps</div></li>
-      <li><div>No DMs</div></li>
-    </ol>
-  </div>
-</section>
 
 <div class="layout">
 <aside class="toc" id="guide">
