@@ -8,6 +8,12 @@
 <meta name="theme-color" content="#0d0d0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23c6ff3d%22/%3E%3Cg%20transform%3D%22translate%2810%208%29%20scale%28.8%29%22%3E%3Cpath%20d%3D%22M16%2032%20L22%206%20L38%2024%20H62%20L78%206%20L84%2032%20V76%20Q84%2092%2068%2092%20H32%20Q16%2092%2016%2076%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Cpath%20d%3D%22M20%2042%20L50%2050%20L80%2042%20V54%20L50%2062%20L20%2054%20Z%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M30%2050%20L42%2053%20V56%20L30%2053%20Z%20M70%2050%20L58%2053%20V56%20L70%2053%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Crect%20x%3D%2228%22%20y%3D%2270%22%20width%3D%2244%22%20height%3D%2212%22%20rx%3D%223%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M36%2070%20L40%2077%20L44%2070%20Z%20M56%2070%20L60%2077%20L64%2070%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3C/g%3E%3C/svg%3E">
 <title>townhall · your own Farcaster client and node in three commands</title>
+<meta property="og:title" content="townhall: your own Farcaster client and node, in three commands">
+<meta property="og:description" content="Run a Snapchain read node and your own Farcaster client in three commands. No API keys. Gasless app keys. A tutorial that explains every piece.">
+<meta property="og:image" content="https://townhall-fc.github.io/townhall/img/og.png">
+<meta property="og:url" content="https://townhall-fc.github.io/townhall/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://townhall-fc.github.io/townhall/img/og.png">
 <meta name="description" content="Run a Snapchain read node and your own Farcaster client in three commands. No API keys. A tutorial that explains every piece as you go.">
 <style>
 @font-face{font-family:"Fira Sans";src:url(fonts/fira-400.woff2) format("woff2");font-weight:400;font-display:swap}
@@ -73,7 +79,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <body>
 <nav class="top">
   <a class="wm" href="#"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#c6ff3d"/><g transform="translate(10 8) scale(.8)"><path d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z" fill="#0d0d0f"/><path d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z" fill="#c6ff3d"/><path d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z" fill="#0d0d0f"/><rect x="28" y="70" width="44" height="12" rx="3" fill="#c6ff3d"/><path d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z" fill="#0d0d0f"/></g></svg>TOWNHALL</a>
-  <span class="links"><a href="#quickstart">Quickstart</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a><a href="#security">Security</a><a href="#trouble">Troubleshooting</a><a href="https://github.com/lexicon179/townhall">GitHub</a></span>
+  <span class="links"><a href="#quickstart">Quickstart</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a><a href="#security">Security</a><a href="#trouble">Troubleshooting</a><a href="https://github.com/townhall-fc/townhall">GitHub</a></span>
   <button class="theme" type="button" aria-label="Switch light or dark theme"></button>
 </nav>
 <main>
@@ -88,12 +94,12 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 
 <h2 id="quickstart">Quickstart</h2>
 <p>From your computer, with a <a href="#before">Hetzner Cloud API token</a>:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
 <p>It prints your server's IP. Then:</p>
-<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash'</code></pre>
-<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash'</code></pre>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'</code></pre>
 <p>Open the <code>https://…sslip.io</code> address the last command prints. The client shows your node's progress in the top bar. Done testing? One more command deletes the server and the volume so billing stops:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
 
 <h3 id="expect">What to expect, measured</h3>
 <p>From the demo node: Hetzner <code>cx43</code> (8 vCPU, 16 GB) in Falkenstein with a 1 TB volume, October 2026, Snapchain 0.14.3.</p>
@@ -107,7 +113,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <tr><td>Adding the app key</td><td>One <code>KEY_ADD</code>, active about 10 seconds later. No gas.</td></tr>
 </table>
 <div class="note">Already have a server (any provider, Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 2 TB disk)? Skip the first command and run the other two on it.</div>
-<p class="small">Prefer to read before you run? Every script is short and commented: <a href="https://github.com/lexicon179/townhall/tree/main/install">install/</a>. The client is built from source on your server, so what runs is what is in the repo.</p>
+<p class="small">Prefer to read before you run? Every script is short and commented: <a href="https://github.com/townhall-fc/townhall/tree/main/install">install/</a>. The client is built from source on your server, so what runs is what is in the repo.</p>
 
 <figure class="shotwrap"><img src="img/app-feed.webp" width="390" height="844" alt="townhall on a phone: home feed read from your own node, with a cast being written"><figcaption>The client. Screenshot from the test build; live screens coming once the demo node is synced.</figcaption></figure>
 
@@ -142,7 +148,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <p>Hands-on time is about 10 minutes. The node then syncs on its own, for most of a day.</p>
 
 <h2 id="step0">Step 0 · Get a server</h2>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
 <p>What it does, in order:</p>
 <ol>
   <li>Uses your SSH key (<code>~/.ssh/id_ed25519.pub</code>, created if missing) and uploads it to Hetzner, so only you can log in.</li>
@@ -154,7 +160,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <p class="small">Options: <code>LOCATION=nbg1</code>, <code>SERVER_TYPE=…</code>, <code>VOLUME_GB=…</code>. A server is billed while it exists, see <a href="#cost">cost &amp; cleanup</a>.</p>
 
 <h2 id="step1">Step 1 · Run a Snapchain read node</h2>
-<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash'</code></pre>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
 <ol>
   <li>Installs Docker.</li>
   <li>Finds the disk with the most free space (your 2 TB volume) and puts the node there.</li>
@@ -168,7 +174,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <p>The node answers on port 3381 with Snapchain's HTTP API. Try it on the server: <code>curl -s localhost:3381/v1/castsByFid?fid=1 | jq '.messages[0].data.castAddBody.text'</code></p>
 
 <h2 id="step2">Step 2 · Create your client</h2>
-<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash'</code></pre>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'</code></pre>
 <ol>
   <li>Clones this repository and builds the client inside a throwaway Node container.</li>
   <li>Starts <a href="https://caddyserver.com">Caddy</a>, which gets an HTTPS certificate for <code>YOUR-IP.sslip.io</code> (a free wildcard DNS name that points at your IP; set <code>DOMAIN=your.domain</code> to use your own).</li>
@@ -271,7 +277,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <h2 id="cost">Cost &amp; cleanup</h2>
 <p>Hetzner Cloud bills by the hour, for the server and for the volume. The demo node (server plus 1 TB volume) came to about $2 for its first 12 hours, so a full test run costs a few dollars. Running it for a month is roughly a hundred-odd dollars; check current prices in the Hetzner console. A dedicated server with large disks is cheaper if you keep the node for good. Adding the app key costs nothing.</p>
 <p>To stop paying, delete the server <b>and</b> the volume. This does it and asks you to confirm first:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
 <p>Your Farcaster account is unaffected. To also revoke the app key, use Settings → Revoke in the client before you delete the server.</p>
 
 <h2 id="testers">Testing this tutorial for someone?</h2>
@@ -287,7 +293,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <p class="small">Never send your recovery phrase or Hetzner token to anyone, the author included. If you were reimbursed for server costs or your time, say so in your post.</p>
 
 <footer>
-  MIT licensed · <a href="https://github.com/lexicon179/townhall">github.com/lexicon179/townhall</a> · Built on the open Farcaster protocol and Snapchain. Sources: <a href="https://docs.farcaster.xyz/learn/architecture/overview">architecture</a>, <a href="https://snapchain.farcaster.xyz/guides/running-a-node">running a node</a>, <a href="https://docs.neynar.com/snapchain/httpapi/httpapi">HTTP API</a>.
+  MIT licensed · <a href="https://github.com/townhall-fc/townhall">github.com/townhall-fc/townhall</a> · Built on the open Farcaster protocol and Snapchain. Sources: <a href="https://docs.farcaster.xyz/learn/architecture/overview">architecture</a>, <a href="https://snapchain.farcaster.xyz/guides/running-a-node">running a node</a>, <a href="https://docs.neynar.com/snapchain/httpapi/httpapi">HTTP API</a>.
 </footer>
 </main>
 <script>

@@ -1,65 +1,76 @@
+<p align="center"><img src="site/img/og.png" alt="townhall" width="720"></p>
+
 # townhall
 
-Your own Farcaster client and Snapchain read node, in three commands. No API keys.
+Your own Farcaster client and Snapchain read node, in three commands. No API keys from anyone.
 
-**Tutorial:** https://lexicon179.github.io/townhall (the `site/` folder) explains every step and the protocol concepts behind it.
+- **Tutorial:** https://townhall-fc.github.io/townhall
+- **Live demo:** https://159-69-253-226.sslip.io (the author's node and client, built from this repo)
+- **License:** MIT
 
 ## Quickstart
 
 ```bash
-# 0. on your computer: a Hetzner Cloud server with a 2 TB volume
-curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash
+# 0. On your computer: create a Hetzner Cloud server and volume
+curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash
 
-# 1. on the server: Snapchain read node (official compose file, unchanged)
-ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash'
+# 1. On the server: run a Snapchain read node (official compose file)
+ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'
 
-# 2. on the server: build the client from source and serve it over HTTPS
-ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash'
+# 2. On the server: build the client from source and serve it over HTTPS
+ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'
 ```
 
-Have your own server (Ubuntu, 4 vCPU, 16 GB RAM, 2 TB disk)? Skip step 0.
+Already have a server (Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 1 TB disk or more)? Skip step 0.
+
+Done testing? Delete the server and volume so billing stops:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash
+```
+
+## What to expect
+
+Measured on the demo node (Hetzner `cx43`, 1 TB volume, Snapchain 0.14.3, October 2026):
+
+| | |
+|---|---|
+| Hands-on time | about 10 minutes |
+| Snapshot download and unpack | about 11 hours (about 445 GB compressed) |
+| Catching up to the chain | about 10 hours |
+| Disk | peak about 800 GB, about 560 GB once synced |
+| App key | one gasless `KEY_ADD`, active in about 10 seconds |
 
 ## What the client does
 
-- Reads everything from your node: feed of people you follow, profiles, threads, mentions.
+- Reads everything from your node: the feed of people you follow, profiles, threads, replies and mentions.
 - Posts with its own app key: casts, replies, likes, recasts, follows, deletes.
-- Adds that key with your recovery phrase as a gasless `KEY_ADD` message (custody-signed EIP-712, no transaction). The phrase is used only in the browser and cleared right after. The key can revoke itself from Settings.
-- Shows which app signed every cast (from the key's `requestFid`) and lets you include or exclude casts by app.
-- Submits writes to your read node, which validates and relays them to validators over gossip.
+- Adds that key from your recovery phrase as a gasless `KEY_ADD` (custody-signed EIP-712, no transaction, no ETH). The phrase is used only in the browser and cleared right after. The key can revoke itself from Settings.
+- Shows which app signed each cast and lets you include or exclude casts by app.
+- **Voters only:** filters the feed to people who hold the Farcaster VOTE NFT on Base.
+- **Replies from mutuals:** replies and mentions from people you follow who follow you back, with a switch for everyone.
+- Writes go to your read node, which validates them and relays them to the validators.
 
 ## Let other people use it (optional)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/signin.sh | bash
+ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | bash'
 ```
 
-Turns your townhall into one anyone can open. Visitors see a feed right away, with no login, and sign in by approving townhall in the Farcaster app (a signed key request). No recovery phrase. The key townhall posts with is made in the visitor's browser and stays there. The server only holds the key of a separate app account that signs the requests. The first run prints that account's address. Send it a little ETH on Optimism to register its FID, then run the command again.
+Visitors see a feed with no login and sign in by approving townhall in the Farcaster app (a signed key request), with no recovery phrase. The key is made in the visitor's browser and stays there. The server holds only the key of a separate app account that signs the requests.
 
-## Layout
+## Repository
 
 ```
-install/   provision.sh (step 0), node.sh (step 1), client.sh (step 2)
+install/   provision.sh (0), node.sh (1), client.sh (2), destroy.sh, signin.sh, snapshot-guard.sh
 client/    the web client (TypeScript, Vite, @farcaster/core, viem)
-site/      the tutorial microsite
-test/      a mock Snapchain node + local chainId 10 chain for end-to-end tests
+server/    optional sign-in service for hosted use
+site/      the tutorial
+test/      mock Snapchain node, local chainId 10 chain, end-to-end browser tests
 ```
 
-## Develop and test without a 2 TB node
+Development and tests: see [CONTRIBUTING.md](CONTRIBUTING.md). Security notes and reporting: see [SECURITY.md](SECURITY.md).
 
-```bash
-cd client && npm ci && npm run build && cd ..
-# local chain with chainId 10, then put test doubles at the IdRegistry/KeyGateway addresses
-npx hardhat node --port 8546   # any hardhat project with chainId: 10
-node test/setup-chain.mjs
-node test/mock-hub.mjs          # serves client/dist and a Snapchain-compatible /v1 API on :3999
-```
+## License
 
-The mock node validates submitted messages for real (hash, Ed25519 signature, active signer, key scopes). It checks gasless `KEY_ADD` the way the Snapchain docs describe (custody `KeyAdd` and `SignedKeyRequest` EIP-712 signatures recovered against the IdRegistry, nonce, scopes) and self-signed `KEY_REMOVE`. It still reads onchain `KeyGateway` keys too. `test/e2e.mjs` drives the whole flow in a browser: recovery phrase, gasless KEY_ADD, cast with mention, follow, like, reply, thread, client filter, voters only, replies, revoke. `test/e2e-signin.mjs` covers the hosted mode: signed-out feed, Sign in with Farcaster (the mock plays the Farcaster API and checks the app's EIP-712 signature), then a cast with the approved key. Run it with `server/index.mjs serve` pointed at the mock (`FC_API=http://127.0.0.1:3999`).
-
-## Security
-
-- Paste a recovery phrase only into a client you run yourself.
-- The app key is stored in the browser. Revoke it with `KeyRegistry.remove` from your custody address.
-- Your node's `/v1` API is reachable through your client address. That is public data, and writes still need valid signatures.
-
-MIT licensed.
+MIT, see [LICENSE](LICENSE). Snapchain itself runs from its official image under its own license.

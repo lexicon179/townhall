@@ -6,7 +6,7 @@
 # data on the biggest disk. The node downloads a snapshot of the network, then keeps
 # itself in sync. No API keys, no accounts.
 #
-#   curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/node.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash
 #
 # Options: DATA_DIR (default: mount point with the most free space)
 set -euo pipefail
@@ -56,7 +56,7 @@ done
 # 6. First sync on a disk smaller than 2 TB: the node keeps every downloaded
 #    snapshot file until the very end. The guard frees what it has finished with.
 if [ ! -d "$NODE_DIR/.rocks/shard-1" ] || [ -d "$NODE_DIR/.rocks.snapshot" ]; then
-  $SUDO curl -fsSL "https://raw.githubusercontent.com/lexicon179/townhall/main/install/snapshot-guard.sh" -o /usr/local/bin/townhall-snapshot-guard
+  $SUDO curl -fsSL "https://raw.githubusercontent.com/townhall-fc/townhall/main/install/snapshot-guard.sh" -o /usr/local/bin/townhall-snapshot-guard
   $SUDO chmod +x /usr/local/bin/townhall-snapshot-guard
   $SUDO systemctl stop townhall-snapshot-guard >/dev/null 2>&1 || true
   $SUDO systemd-run --unit=townhall-snapshot-guard /usr/local/bin/townhall-snapshot-guard "$NODE_DIR" >/dev/null

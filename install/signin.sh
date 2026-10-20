@@ -5,7 +5,7 @@
 # townhall in the Farcaster app instead of typing a recovery phrase. It needs an app
 # account: a separate FID whose key lives on this server and only signs key requests.
 #
-#   curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/signin.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | bash
 #
 # First run makes the app key and prints its address. Send a little ETH on Optimism to it,
 # run again, and it registers the FID and starts the service.

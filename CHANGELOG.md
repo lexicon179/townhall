@@ -1,0 +1,13 @@
+# Changelog
+
+## 0.1.0 · 2026-10-20
+
+First public version.
+
+- Three commands: `provision.sh` (Hetzner server and volume), `node.sh` (Snapchain read node), `client.sh` (client built from source, HTTPS with Caddy).
+- `destroy.sh` deletes the server and volume.
+- Snapshot guard: first sync fits on a 1 TB volume (measured peak about 800 GB).
+- Client: feed, profiles, threads, replies and mentions read from your node; casts, replies, likes, recasts, follows, deletes; filter casts by the app that signed them; voters only; replies from mutuals; light and dark theme.
+- App keys added as gasless `KEY_ADD` from a recovery phrase, revocable from Settings with a self-signed `KEY_REMOVE`.
+- Optional hosted mode (`signin.sh`): signed-out feed and Sign in with Farcaster, no recovery phrase.
+- Tutorial with measured sync time, disk and cost, and a section on what broke while building it.

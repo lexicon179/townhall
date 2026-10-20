@@ -4,7 +4,7 @@
 # Runs on YOUR computer. Hetzner bills by the hour until both are gone, so run this
 # when you are done testing:
 #
-#   curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash
+#   curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash
 #
 # It asks you to type the server name before deleting anything. Your Farcaster account
 # is not touched; to also revoke the app key, use Settings → Revoke in the client first.

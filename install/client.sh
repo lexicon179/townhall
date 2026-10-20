@@ -6,17 +6,17 @@
 # /v1/* to your node, so the browser talks only to your server: reads come from
 # your node, writes are submitted to your node, which relays them to validators.
 #
-#   curl -fsSL https://raw.githubusercontent.com/lexicon179/townhall/main/install/client.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash
 #
 # Options:
 #   DOMAIN   your own domain pointed at this server (default: <ip>.sslip.io, works with no setup)
-#   REPO     git URL of townhall (default: https://github.com/lexicon179/townhall)
+#   REPO     git URL of townhall (default: https://github.com/townhall-fc/townhall)
 set -euo pipefail
 
 say() { printf '\033[1m▸ %s\033[0m\n' "$*"; }
 die() { printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 SUDO=""; [ "$(id -u)" -eq 0 ] || SUDO="sudo"
-REPO="${REPO:-https://github.com/lexicon179/townhall}"
+REPO="${REPO:-https://github.com/townhall-fc/townhall}"
 APP_DIR=/opt/townhall
 
 command -v docker >/dev/null 2>&1 || die "Docker not found. Run step 1 (node.sh) first."

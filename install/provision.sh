@@ -23,7 +23,7 @@ NAME="${NAME:-townhall}"
 LOCATION="${LOCATION:-fsn1}"
 VOLUME_GB="${VOLUME_GB:-2000}"
 SSH_PUBKEY_FILE="${SSH_PUBKEY_FILE:-$HOME/.ssh/id_ed25519.pub}"
-REPO_RAW="${REPO_RAW:-https://raw.githubusercontent.com/lexicon179/townhall/main}"
+REPO_RAW="${REPO_RAW:-https://raw.githubusercontent.com/townhall-fc/townhall/main}"
 
 say() { printf '\033[1m▸ %s\033[0m\n' "$*"; }
 die() { printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
