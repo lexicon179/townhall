@@ -190,3 +190,13 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .theme { order: 4; margin-left: auto; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; display: grid; place-items: center; }
 .theme:hover { color: var(--ink); }
 .theme svg { width: 18px; height: 18px; }
+
+/* profile counts, cast inspector */
+.profile .stats { grid-column: 1 / -1; display: flex; gap: 16px; margin-top: 10px; font-size: 14.5px; flex-wrap: wrap; }
+.profile .stats b { color: var(--ink); font-weight: 600; }
+.profile .stats .mutual { border: 1px solid var(--hair); border-radius: 999px; padding: 0 8px; font-size: 12.5px; }
+.actions .inspect { margin-left: auto; font-family: 'Fira Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); }
+.inspect-panel { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--hair); border-radius: var(--r-s); background: var(--surface); font-size: 13.5px; }
+.inspect-panel .kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; }
+.inspect-panel .kv span { overflow-wrap: anywhere; }
+.inspect-panel p { margin: 10px 0 0; font-size: 13px; }

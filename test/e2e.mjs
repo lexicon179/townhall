@@ -101,6 +101,12 @@ ok('search by username opens the profile', true);
 await p.goto('http://localhost:3999/#/u/bob');
 await p.waitForSelector('.profile', { timeout: 10000 });
 ok('#/u/<username> link opens the profile', (await p.textContent('.profile')).includes('bob'));
+await p.goto('http://localhost:3999/#/u/100');
+await p.waitForFunction(() => /\d+ followers/.test(document.querySelector('.profile .stats')?.textContent || ''), null, { timeout: 10000 });
+{ const st = await p.textContent('.profile .stats'); ok(`profile counts from the node (${st.replace(/\s+/g, ' ').trim()})`, /1 follower\b/.test(st) && /Follows you/.test(st)); }
+await p.locator('.cast [data-a=inspect]').first().click();
+await p.waitForSelector('.inspect-panel');
+ok('inspect shows hash, signer and signing app', /BLAKE3/.test(await p.textContent('.inspect-panel')) && /Signed by app/.test(await p.textContent('.inspect-panel')));
 await p.goto('http://localhost:3999/#/search/nobody-here');
 await p.waitForFunction(() => document.querySelector('.err')?.textContent.includes('No account'), null, { timeout: 10000 });
 ok('unknown username says so', true);

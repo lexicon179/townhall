@@ -2,7 +2,7 @@ import './polyfill';
 import './style.css';
 import {
   info, castsByFid, castsByParent, following, followers, castsByMention, profile, fidByName, appOfCast,
-  isFollowing, liked, signerActive, toDate, type CastMsg,
+  isFollowing, liked, signerActive, toDate, linkCount, type CastMsg,
 } from './hub';
 import { voted } from './votes';
 import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, revokeKey, type Stored } from './keys';
@@ -143,6 +143,7 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
           <button data-a="like" aria-label="Like" title="Like">${ICON.like}</button>
           <button data-a="recast" aria-label="Recast" title="Recast">${ICON.recast}</button>
           ${mine ? `<button data-a="delete" aria-label="Delete" title="Delete">${ICON.delete}</button>` : ''}
+          <button data-a="inspect" class="inspect" aria-label="Inspect the protocol message" title="Inspect the protocol message">{ }</button>
         </div>
         <div class="slot"></div>
       </div>
@@ -155,6 +156,23 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
   el.querySelector('.actions')!.addEventListener('click', async (ev) => {
     const b = (ev.target as HTMLElement).closest('button');
     if (!b) return;
+    if (b.dataset.a === 'inspect') {
+      const slot = el.querySelector('.slot')!;
+      if (slot.querySelector('.inspect-panel')) { slot.innerHTML = ''; return; }
+      const signed = new Date(toDate(c.data.timestamp)).toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+      slot.innerHTML = `
+        <div class="inspect-panel">
+          <div class="kv">
+            <b>Message</b><span>CAST_ADD from fid ${c.data.fid}, Farcaster time ${c.data.timestamp} (${signed})</span>
+            <b>Hash</b><span class="mono">${esc(c.hash)} (BLAKE3)</span>
+            <b>Signer</b><span class="mono">${esc(c.signer)}</span>
+            <b>Signed by app</b><span>${app ? `fid ${app}${appName ? ` (${esc(appName)})` : ''}, from the key's SignedKeyRequest` : 'unknown'}</span>
+            <b>Signature</b><span class="mono">${esc(String((c as any).signature ?? '').slice(0, 44))}… (Ed25519)</span>
+          </div>
+          <p class="muted">Your node stored this only after checking the hash, the Ed25519 signature, and that the signer is an active key of fid ${c.data.fid}. <a href="/v1/castById?fid=${c.data.fid}&hash=${esc(c.hash)}" target="_blank" rel="noreferrer">Raw JSON from your node</a></p>
+        </div>`;
+      return;
+    }
     if (!key) { alert('Read-only mode. Connect your account in settings to write.'); return; }
     const a = b.dataset.a;
     try {
@@ -266,8 +284,14 @@ async function viewProfile(fid: number) {
       <div class="who"><h1>${esc(p.display || p.username || `fid ${fid}`)}</h1><div class="muted">@${esc(p.username || '')}, fid ${fid}</div></div>
       <div class="follow"></div>
       ${p.bio ? `<p class="bio">${esc(p.bio)}</p>` : ''}
+      <div class="stats muted"><span data-s="following">… following</span><span data-s="followers">… followers</span><span class="mutual" hidden>Follows you</span></div>
     </header>`);
   $view.append(head);
+  // counted straight from your node's link store
+  const fmt = (c: { n: number; more: boolean }) => (c.n >= 1000 ? `${(c.n / 1000).toFixed(c.n >= 10_000 ? 0 : 1).replace(/\.0$/, '')}K` : String(c.n)) + (c.more ? '+' : '');
+  linkCount('following', fid).then((c) => (head.querySelector('[data-s=following]')!.innerHTML = `<b>${fmt(c)}</b> following`)).catch(() => {});
+  linkCount('followers', fid).then((c) => (head.querySelector('[data-s=followers]')!.innerHTML = `<b>${fmt(c)}</b> follower${c.n === 1 && !c.more ? "" : "s"}`)).catch(() => {});
+  if (key && fid !== key.fid) isFollowing(fid, key.fid).then((y) => { if (y) head.querySelector<HTMLElement>('.mutual')!.hidden = false; });
   if (key && fid !== key.fid) {
     let on = await isFollowing(key.fid, fid);
     const b = h(`<button class="btn ${on ? '' : 'primary'}">${on ? 'Following' : 'Follow'}</button>`) as HTMLButtonElement;

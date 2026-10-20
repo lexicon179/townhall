@@ -166,3 +166,17 @@ export async function appNonce(fid: number, requestFid: number): Promise<number>
   const r = await get<any>('signersByFid', { fid, pageSize: 1, requesterFids: requestFid });
   return Number(r.requesterFidNonces?.[String(requestFid)] ?? 0);
 }
+
+/** Count follows in one direction, 1,000 links per request (the node's page limit), up to `cap`. */
+export async function linkCount(dir: 'following' | 'followers', fid: number, cap = 10_000): Promise<{ n: number; more: boolean }> {
+  const path = dir === 'following' ? 'linksByFid' : 'linksByTargetFid';
+  const id: Record<string, number> = dir === 'following' ? { fid } : { target_fid: fid };
+  let n = 0;
+  let pageToken: string | undefined;
+  do {
+    const r = await get<any>(path, { ...id, link_type: 'follow', pageSize: 1000, ...(pageToken ? { pageToken } : {}) });
+    n += (r.messages ?? []).length;
+    pageToken = r.nextPageToken || undefined;
+  } while (pageToken && n < cap);
+  return { n, more: !!pageToken };
+}
