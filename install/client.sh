@@ -9,7 +9,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash
 #
 # Options:
-#   DOMAIN   your own domain pointed at this server (default: <ip>.sslip.io, works with no setup)
+#   DOMAIN   your own domain pointed at this server (default: <ip>.sslip.io, works with no setup).
+#            The <ip>.sslip.io address keeps working alongside it.
 #   REPO     git URL of townhall (default: https://github.com/townhall-fc/townhall)
 set -euo pipefail
 
@@ -24,7 +25,9 @@ curl -fsS localhost:3381/v1/info >/dev/null 2>&1 || echo "  ! Your node's API is
 
 # 1. Address
 IP=$(curl -fsS -4 https://api.ipify.org || hostname -I | awk '{print $1}')
-DOMAIN="${DOMAIN:-$(echo "$IP" | tr . -).sslip.io}"
+SSLIP="$(echo "$IP" | tr . -).sslip.io"
+DOMAIN="${DOMAIN:-$SSLIP}"
+SITES="$DOMAIN"; [ "$DOMAIN" = "$SSLIP" ] || SITES="$DOMAIN, $SSLIP"
 say "Client address: https://$DOMAIN"
 
 # 2. Build from source in a throwaway Node container
@@ -39,7 +42,7 @@ $SUDO docker run --rm -v "$APP_DIR:/out" node:22-alpine sh -c "
 
 # 3. Caddy: HTTPS certificate, static client, /v1 → node
 $SUDO tee "$APP_DIR/Caddyfile" >/dev/null <<EOF
-$DOMAIN {
+$SITES {
 	encode gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
