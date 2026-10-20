@@ -169,7 +169,8 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <dt>Read nodes vs validators</dt>
   <dd>A read node follows the chain, verifies every block's signatures from the validators, stores the full state and serves the API. It does not vote and keeps no mempool. Anyone can run one; validators are a fixed set of operators.</dd>
   <dt>Storage</dt>
-  <dd>Each FID rents storage units. A unit allows a fixed number of casts, reactions and follows; when you go over, the oldest are pruned. Without storage, the network rejects your messages. Check yours on your node: <code>/v1/storageLimitsByFid?fid=YOUR_FID</code>.</dd>
+  <dd>Storage is rent, paid onchain on Optimism (the <code>StorageRegistry</code> contract) and counted in units. Each unit expires after a period, so rent is renewed, not bought once. A unit sets a separate limit per kind of message (casts, reactions, follows, profile data). Go over a limit and nothing fails: your <i>oldest</i> message of that kind is pruned to make room, which suits a timeline but means a very active account can lose old follows or casts. If your rent runs out, the network rejects new messages from you. This is how Snapchain keeps its state bounded and stops spam without per-message fees.</dd>
+  <dd>Check yours on your node: <code>/v1/storageLimitsByFid?fid=YOUR_FID</code> lists each store's <code>limit</code> and <code>used</code>, plus your units and when they expire. Rent and key events are onchain events your node indexes too: <code>/v1/onChainEventsByFid?fid=YOUR_FID&amp;event_type=EVENT_TYPE_STORAGE_RENT</code>.</dd>
   <dt>Usernames (fnames)</dt>
   <dd>Human-readable names mapped to FIDs by a signed proof. Your node answers <code>/v1/userNameProofByName?name=…</code>.</dd>
   <dt>Clients</dt>
