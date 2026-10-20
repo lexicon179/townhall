@@ -181,17 +181,22 @@ export async function appNonce(fid: number, requestFid: number): Promise<number>
 export async function linkCount(dir: 'following' | 'followers', fid: number, onProgress?: (c: { n: number; more: boolean }) => void, cap = 10_000): Promise<{ n: number; more: boolean }> {
   const path = dir === 'following' ? 'linksByFid' : 'linksByTargetFid';
   const id: Record<string, number> = dir === 'following' ? { fid } : { target_fid: fid };
-  let n = 0;
+  // Count distinct accounts, and stop when a page brings nobody new: past the end of the index the
+  // node can keep returning a next-page token with the same messages again.
+  const seen = new Set<number>();
+  const other = (m: any) => Number(dir === 'following' ? m.data?.linkBody?.targetFid : m.data?.fid);
   let pageToken: string | undefined;
   let pageSize = 100;
-  do {
+  for (;;) {
     const r = await get<any>(path, { ...id, link_type: 'follow', pageSize, ...(pageToken ? { pageToken } : {}) });
-    n += (r.messages ?? []).length;
+    const before = seen.size;
+    for (const m of r.messages ?? []) seen.add(other(m));
     pageToken = r.nextPageToken || undefined;
-    if (pageToken) onProgress?.({ n, more: true });
+    if (!pageToken || seen.size === before) return { n: seen.size, more: false };
+    if (seen.size >= cap) return { n: seen.size, more: true };
+    onProgress?.({ n: seen.size, more: true });
     pageSize = 1000;
-  } while (pageToken && n < cap);
-  return { n, more: !!pageToken };
+  }
 }
 
 /** The node's event log for one shard, newest first: merged messages, pruned messages, confirmed blocks. */

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Follower and following counts show up within a second and grow as the node pages through large accounts (was a blank until every page was read).
+- Follower and following counts: distinct accounts, shown within a second and growing as the node pages through large accounts. Fixes a blank or inflated count when the node kept returning the last page.
 - Faster first load: the client starts with a 60 KB script (was 3.6 MB). Signing, posting and the Base lookup load on first use; the "voted" badge appears once Base answers instead of holding the cast back. The web server also offers zstd.
 - Self-hosted sign-in page: your own keys, with a pointer to delegated sign-in (one more command); the guide explains it.
 - The node status line has its own row, so long statuses no longer push the header around.
