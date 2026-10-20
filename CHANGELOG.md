@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The gargoyle shows your node's state: awake and blinking when in sync, squinting and looking around while it catches up, asleep while it downloads the network or can't be reached.
 - Fix: leaving Live (or any page) while it was still loading could paint "Cannot set properties of null" over the next page.
 - Follower and following counts: distinct accounts, shown within a second and growing as the node pages through large accounts. Fixes a blank or inflated count when the node kept returning the last page.
 - Faster first load: the client starts with a 60 KB script (was 3.6 MB). Signing, posting and the Base lookup load on first use; the "voted" badge appears once Base answers instead of holding the cast back. The web server also offers zstd.

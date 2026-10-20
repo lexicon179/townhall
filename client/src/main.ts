@@ -81,6 +81,13 @@ let votersOnly = localStorage.getItem('votersOnly') === '1';
 
 // ---------- node status ----------
 
+/** The gargoyle in the corner shows how your node is doing: awake and watching, squinting while it catches up, asleep while it downloads. */
+const MOOD = { awake: 'Your node is awake: in sync', syncing: 'Your node is catching up', asleep: 'Your node is asleep: still downloading the network, or not reachable' };
+function mood(m: keyof typeof MOOD) {
+  document.documentElement.dataset.node = m;
+  document.querySelector('.brand')?.setAttribute('title', MOOD[m]);
+}
+
 async function nodeStatus() {
   try {
     const i = await info();
@@ -88,11 +95,13 @@ async function nodeStatus() {
     const worst = delays.length ? Math.max(...delays) : 0;
     const height = Math.max(0, ...(i.shardInfos ?? []).map((s: any) => Number(s.maxHeight ?? 0)));
     $node.className = 'node ' + (worst < 10 ? 'ok' : 'warn');
+    mood(worst < 10 ? 'awake' : 'syncing');
     $node.innerHTML = worst < 10
       ? `<b>${cfg.signin ? 'Node' : 'Your node'}</b> in sync${height ? `, block ${height.toLocaleString('en-US')}` : ''}`
       : `<b>${cfg.signin ? 'Node' : 'Your node'}</b> catching up, ${worst.toLocaleString('en-US')} blocks behind`;
   } catch {
     $node.className = 'node bad';
+    mood('asleep');
     $node.innerHTML = '<b>Your node</b> is starting: the first run downloads the network, a few hours';
   }
 }

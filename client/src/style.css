@@ -241,3 +241,19 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 50; box-shadow: 0 6px 24px rgb(0 0 0 / 0.3); }
 
 .cmd { white-space: pre-wrap; word-break: break-all; font-size: 13px; background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 14px; margin: 0 0 12px; }
+
+/* ---------- the gargoyle's moods (see mood() in main.ts) ---------- */
+.brand { position: relative; }
+.g-eyes { transform-box: fill-box; transform-origin: center; transition: transform 0.4s ease; }
+.g-pupils { transform-box: fill-box; transform-origin: center; transition: opacity 0.3s; }
+[data-node=awake] .g-eyes { animation: g-blink 7s infinite; }
+[data-node=syncing] .g-eyes { transform: scaleY(0.55); }
+[data-node=syncing] .g-pupils { animation: g-look 2.4s ease-in-out infinite; }
+[data-node=asleep] .g-eyes { transform: scaleY(0.14); }
+[data-node=asleep] .g-pupils { opacity: 0; }
+.zzz { position: absolute; left: 22px; top: -6px; font-size: 11px; font-weight: 700; letter-spacing: 0; color: var(--signal); opacity: 0; pointer-events: none; }
+[data-node=asleep] .zzz { animation: g-z 2.8s ease-out infinite; }
+@keyframes g-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes g-look { 0%, 100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+@keyframes g-z { 0% { opacity: 0; transform: translate(0, 4px) scale(0.8); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(8px, -10px) scale(1.2); } }
+@media (prefers-reduced-motion: reduce) { .g-eyes, .g-pupils, .zzz { animation: none !important; } }
