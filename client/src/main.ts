@@ -631,7 +631,9 @@ function viewSettings() {
 
 // ---------- router ----------
 
+let routeGen = 0;
 async function route() {
+  const gen = ++routeGen;
   const parts = location.hash.replace(/^#\/?/, '').split('/');
   stopLive();
   try {
@@ -648,6 +650,7 @@ async function route() {
     if (parts[0] === 'setup') return viewSetup();
     return await viewFeed();
   } catch (e) {
+    if (gen !== routeGen) return; // you already moved on; don't paint an old page's error over the new one
     $view.innerHTML = `<div class="card err">${esc((e as Error).message)}</div>`;
   }
 }

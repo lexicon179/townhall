@@ -34,10 +34,13 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 const n = (x: number) => x.toLocaleString('en-US');
 
 let timer: ReturnType<typeof setInterval> | null = null;
-export function stopLive() { if (timer) clearInterval(timer); timer = null; }
+let run = 0; // bumped on every open and close, so a request still in flight when you leave does nothing
+export function stopLive() { if (timer) clearInterval(timer); timer = null; run++; }
 
 export async function viewLive($view: HTMLElement) {
   stopLive();
+  const mine = run;
+  const gone = () => mine !== run;
   const hidden = new Set<string>(JSON.parse(localStorage.getItem('liveHidden') || '[]'));
   $view.innerHTML = `
     <section class="live">
@@ -56,7 +59,7 @@ export async function viewLive($view: HTMLElement) {
       <div class="chips live-filter">${Object.entries(KINDS).map(([k, v]) => `<button class="chip ${hidden.has(k) ? 'off' : ''}" data-k="${k}">${v}</button>`).join('')}</div>
       <ol class="stream" aria-live="off"></ol>
     </section>`;
-  const $ = (k: string) => $view.querySelector(`[data-k=${k}]`)!;
+  const set = (k: string, v: string) => { const el = $view.querySelector(`[data-k=${k}]`); if (el) el.textContent = v; };
   const stream = $view.querySelector('.stream')!;
   $view.querySelector('.live-filter')!.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('.chip'); if (!b) return;
@@ -76,16 +79,17 @@ export async function viewLive($view: HTMLElement) {
     stream.prepend(li);
     setTimeout(() => li.classList.remove('fresh'), 1200);
     while (stream.children.length > 120) stream.lastElementChild!.remove();
-    profile(it.fid).then((p) => { if (p.username) li.querySelector('.who a')!.textContent = '@' + p.username; });
-    if (it.target?.fid) profile(it.target.fid).then((p) => (li.querySelector('.obj')!.innerHTML = `${it.kind === 'reaction' ? ' a cast by' : ''} <a href="#/u/${it.target!.fid}">@${esc(p.username || 'fid ' + it.target!.fid)}</a>`));
+    profile(it.fid).then((p) => { const a = li.querySelector('.who a'); if (p.username && a) a.textContent = '@' + p.username; });
+    if (it.target?.fid) profile(it.target.fid).then((p) => { const o = li.querySelector('.obj'); if (o) o.innerHTML = `${it.kind === 'reaction' ? ' a cast by' : ''} <a href="#/u/${it.target!.fid}">@${esc(p.username || 'fid ' + it.target!.fid)}</a>`; });
   };
 
   const tick = async (first = false) => {
     try {
       const i = await info();
-      for (const s of i.shardInfos ?? []) { const el = $view.querySelector(`[data-k=s${s.shardId}]`); if (el) el.textContent = n(Number(s.maxHeight ?? 0)); }
-      $('msgs').textContent = n(Number(i.dbStats?.numMessages ?? 0));
-      $('fids').textContent = n(Number(i.dbStats?.numFidRegistrations ?? 0));
+      if (gone()) return;
+      for (const s of i.shardInfos ?? []) set(`s${s.shardId}`, n(Number(s.maxHeight ?? 0)));
+      set('msgs', n(Number(i.dbStats?.numMessages ?? 0)));
+      set('fids', n(Number(i.dbStats?.numFidRegistrations ?? 0)));
     } catch { /* node busy; try again next tick */ }
     const fresh: Item[] = [];
     for (const shard of [1, 2]) {
@@ -99,11 +103,12 @@ export async function viewLive($view: HTMLElement) {
         if (evs.length) last[shard] = Math.max(last[shard], ...evs.map((e) => Number(e.id)));
       } catch { /* skip this shard this tick */ }
     }
+    if (gone()) return;
     fresh.sort((a, b) => a.ts - b.ts || a.id - b.id);
     const now = Date.now();
     for (const it of first ? fresh.slice(-40) : fresh) { await render(it); if (!first) seenAt.push(now); }
     while (seenAt.length && now - seenAt[0] > 60_000) seenAt.shift();
-    $('rate').textContent = first ? '…' : n(seenAt.length);
+    set('rate', first ? '…' : n(seenAt.length));
   };
 
   await tick(true);
