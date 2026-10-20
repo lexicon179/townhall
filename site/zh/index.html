@@ -257,14 +257,14 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 <div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex</code></pre></div>
 <p>它依次做这些事：</p>
 <ol>
-  <li>使用你的 SSH 密钥（<code>~/.ssh/id_ed25519.pub</code>，没有就创建）并上传到 Hetzner，只有你能登录。</li>
+  <li>使用你的 SSH 密钥（<code>~/.ssh/id_ed25519.pub</code>，Windows 上是 <code>C:\Users\你\.ssh\id_ed25519.pub</code>；没有就创建）并上传到 Hetzner，只有你能登录。</li>
   <li>在该机房选择至少 4 vCPU、16 GB 内存的最便宜机型。</li>
   <li>创建防火墙，只开放 SSH（22）、客户端用的 HTTP/HTTPS（80、443），以及 Snapchain 节点之间通信用的 UDP 3382。</li>
   <li>创建 Ubuntu 24.04 服务器并挂载一块数据卷：账户允许就用 2 TB，否则用允许的最大值。1 TB 就够（见<a href="#expect">实测数据</a>）。</li>
   <li>等到能 SSH 登录后，打印接下来两条已填好 IP 的命令。</li>
 </ol>
 <p class="small">在 Windows 上，PowerShell 版本执行相同的步骤；创建 SSH 密钥时可能需要按两次回车。第 1、2 步在 PowerShell 中可直接运行。</p>
-<p class="small">可选参数：<code>LOCATION=nbg1</code>、<code>SERVER_TYPE=…</code>、<code>VOLUME_GB=…</code>。服务器存在期间按时计费，见<a href="#cost">费用与清理</a>。</p>
+<p class="small">可选参数：<code>LOCATION=nbg1</code>、<code>SERVER_TYPE=…</code>、<code>VOLUME_GB=…</code>（写在 <code>bash</code> 前面；Windows 上先设置，例如 <code>$env:LOCATION="nbg1"</code>）。服务器存在期间按时计费，见<a href="#cost">费用与清理</a>。</p>
 
 <h2 id="step1">第 1 步 · 运行 Snapchain 只读节点</h2>
 <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
@@ -385,6 +385,8 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <tr><td>添加密钥后 cast 被拒</td><td>你的 FID 可能没有存储。在你的节点上查看 <code>/v1/storageLimitsByFid?fid=YOUR_FID</code>。</td></tr>
   <tr><td>发帖时 “invalid signer”</td><td>你的节点还没处理到这个密钥事件，通常是因为还在同步。等同步完成。</td></tr>
   <tr><td>第 0 步报 “volumes size limit exceeded”</td><td>新的 Hetzner 账号有卷总量上限。第 0 步会挂载允许的最大卷并提示你。以后要扩容，在 Hetzner 控制台（Limits）申请提额后调整卷大小。</td></tr>
+  <tr><td>Windows 提示无法识别 <code>curl</code> 或 <code>bash</code></td><td>这是 cmd。请打开 PowerShell，使用第 0 步中的 Windows 命令。之后第 1、2 步可直接运行。</td></tr>
+  <tr><td>提示 “Please install 'jq' first”（或 ssh）</td><td>提示末尾会给出适合你系统的安装命令，例如 <code>brew install jq</code> 或 <code>sudo apt install -y jq</code>。运行后再执行一次第 0 步。</td></tr>
   <tr><td>第 0 步报 “error during placement”</td><td>该机房暂时没有这个机型。第 0 步会自动尝试其他欧洲机房。</td></tr>
   <tr><td>消息因存储被拒</td><td>你的 FID 没有剩余存储单位。在任意 Farcaster 应用里租用存储。</td></tr>
 </table>
@@ -402,7 +404,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li>在一台干净的机器上运行这三条命令，并记录时间。</li>
   <li>等客户端显示节点已同步后：发一条 cast、关注一个人、点一个赞，并用筛选隐藏某个应用的 cast。</li>
   <li>也在手机上打开看看。</li>
-  <li>运行 <code>destroy.sh</code>，停止计费。</li>
+  <li>运行清理命令（<code>destroy.sh</code>，Windows 上是 <code>destroy.ps1</code>），停止计费。</li>
   <li>在 Farcaster 上发帖说明过程，好的坏的都写，以及花了多长时间。</li>
 </ol>
 <p class="small">永远不要把你的助记词或 Hetzner 令牌发给任何人，包括作者本人。如果你的服务器费用或时间得到了报销，请在帖子里注明。</p>

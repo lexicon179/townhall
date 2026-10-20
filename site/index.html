@@ -256,14 +256,14 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 <div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex</code></pre></div>
 <p>What it does, in order:</p>
 <ol>
-  <li>Uses your SSH key (<code>~/.ssh/id_ed25519.pub</code>, created if missing) and uploads it to Hetzner, so only you can log in.</li>
+  <li>Uses your SSH key (<code>~/.ssh/id_ed25519.pub</code>, on Windows <code>C:\Users\you\.ssh\id_ed25519.pub</code>; created if missing) and uploads it to Hetzner, so only you can log in.</li>
   <li>Picks the cheapest server type in the location with at least 4 vCPU and 16 GB RAM.</li>
   <li>Creates a firewall that only opens SSH (22), HTTP/HTTPS for your client (80, 443) and UDP 3382, the port Snapchain nodes use to talk to each other.</li>
   <li>Creates the server with Ubuntu 24.04 and attaches a volume for the node's data: 2 TB if your account allows it, otherwise the largest it allows. 1 TB is enough (see <a href="#expect">measured</a>).</li>
   <li>Waits until it can SSH in, then prints the next two commands with your IP filled in.</li>
 </ol>
 <p class="small">On Windows the PowerShell version does the same steps; it may ask you to press Enter twice when it creates your SSH key. Steps 1 and 2 work as they are in PowerShell.</p>
-<p class="small">Options: <code>LOCATION=nbg1</code>, <code>SERVER_TYPE=…</code>, <code>VOLUME_GB=…</code>. A server is billed while it exists, see <a href="#cost">cost &amp; cleanup</a>.</p>
+<p class="small">Options: <code>LOCATION=nbg1</code>, <code>SERVER_TYPE=…</code>, <code>VOLUME_GB=…</code> (put them before <code>bash</code>; on Windows set them first, for example <code>$env:LOCATION="nbg1"</code>). A server is billed while it exists, see <a href="#cost">cost &amp; cleanup</a>.</p>
 
 <h2 id="step1">Step 1 · Run a Snapchain read node</h2>
 <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
@@ -387,6 +387,8 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <tr><td>Casts rejected after adding a key</td><td>Your FID may have no storage. Check <code>/v1/storageLimitsByFid?fid=YOUR_FID</code> on your node.</td></tr>
   <tr><td>"invalid signer" when posting</td><td>Your node hasn't processed the key event yet, usually because it is still syncing. Wait until it is in sync.</td></tr>
   <tr><td>"volumes size limit exceeded" in step 0</td><td>New Hetzner accounts have a cap on total volume size. Step 0 then attaches the largest volume allowed and tells you. To grow it later, request a higher limit in the Hetzner console (Limits) and resize the volume.</td></tr>
+  <tr><td><code>'curl'</code> or <code>'bash'</code> is not recognized (Windows)</td><td>That is cmd. Open PowerShell and use the Windows command from step 0. Steps 1 and 2 then work as they are.</td></tr>
+  <tr><td>"Please install 'jq' first" (or ssh)</td><td>The message ends with the exact command for your system, such as <code>brew install jq</code> or <code>sudo apt install -y jq</code>. Run it, then run step 0 again.</td></tr>
   <tr><td>"error during placement" in step 0</td><td>That location is out of the server type for now. Step 0 tries the other EU locations automatically.</td></tr>
   <tr><td>Messages rejected for storage</td><td>Your FID has no storage units left. Rent storage in any Farcaster app.</td></tr>
 </table>
@@ -404,7 +406,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li>Run the three commands from a clean machine and note the times.</li>
   <li>Once the client says the node is in sync: post a cast, follow someone, like something, and hide one app's casts with the filter.</li>
   <li>Open it on your phone too.</li>
-  <li>Run <code>destroy.sh</code> so you stop paying.</li>
+  <li>Run the cleanup command (<code>destroy.sh</code>, or <code>destroy.ps1</code> on Windows) so you stop paying.</li>
   <li>Post on Farcaster what happened, good and bad, and how long it took.</li>
 </ol>
 <p class="small">Never send your recovery phrase or Hetzner token to anyone, the author included. If you were reimbursed for server costs or your time, say so in your post.</p>
