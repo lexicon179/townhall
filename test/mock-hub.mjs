@@ -223,6 +223,11 @@ http.createServer(async (req, res) => {
       res.setHeader('content-type', 'application/json');
       return res.end(JSON.stringify(body));
     }
+    if (/^\/c\/\d+\/0x/.test(path)) { // Caddy: /c/* to the service, the client itself if it is not running
+      const r = await fetch(SIGNIN + req.url, { headers: { 'x-forwarded-host': req.headers.host } }).catch(() => null);
+      res.setHeader('content-type', 'text/html');
+      return res.end(r?.ok ? await r.text() : readFileSync(join(DIST, 'index.html')));
+    }
     if (path.startsWith('/api/')) { // what Caddy does in production
       let raw = ''; for await (const c of req) raw += c;
       const r = await fetch(SIGNIN + req.url, { method: req.method, headers: { 'content-type': 'application/json' }, body: req.method === 'POST' ? raw : undefined });

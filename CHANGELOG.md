@@ -7,6 +7,8 @@
 - Search by username or FID; follower and following counts; Farcaster-style relative times.
 - Share a cast: a link on your own client that opens for anyone (share sheet on phones).
 - Quote casts, and quoted casts shown inside the cast that quotes them.
+- Hosted sign-in: a choice between the Farcaster app and your own keys; `signin.sh IMPORT=1` uses an existing spare account as the app account.
+- Shared cast links `/c/<fid>/<hash>` with link previews (Open Graph), served by the optional service; without it they still open the client.
 - Fix: deleted casts (CAST_REMOVE) no longer break the feed.
 
 ## 0.1.0 · 2026-10-20

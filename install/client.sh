@@ -56,10 +56,25 @@ $SITES {
 	handle /api/* {
 		reverse_proxy 127.0.0.1:3390
 	}
+	# Shared casts: the optional service (signin.sh) adds link-preview tags.
+	handle /c/* {
+		reverse_proxy 127.0.0.1:3390
+	}
 	handle {
 		root * /srv
 		try_files {path} /index.html
 		file_server
+	}
+	# Without that service, /c/ links still open the client.
+	handle_errors 502 {
+		@cast path /c/*
+		handle @cast {
+			root * /srv
+			rewrite * /index.html
+			file_server {
+				status 200
+			}
+		}
 	}
 }
 EOF

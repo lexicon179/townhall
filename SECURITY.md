@@ -6,7 +6,7 @@
 - **The phrase stays in your browser.** The client derives your custody address, signs the two EIP-712 authorizations for one `KEY_ADD`, and clears it. It is never sent to the server. You can check this in `client/src/keys.ts`.
 - **The app key lives in the browser's local storage.** Its scopes allow casts, reactions, follows and profile data; it cannot move your FID or add keys. Settings → Revoke sends a `KEY_REMOVE` signed by the key itself. An unused key also expires on its own (90-day sliding TTL).
 - **Your node's `/v1` API is public** through your client address. It serves public network data, and writes still need valid signatures.
-- **The hosted sign-in service** (`server/`, optional) keeps one private key on the server, for a separate app account that only signs key requests. It holds no user keys or funds.
+- **The hosted sign-in service** (`server/`, optional) keeps one private key on the server, for a separate app account that only signs key requests. It holds no user keys or funds. With `IMPORT=1` you type that account's recovery phrase into a hidden prompt on the server; only the derived custody key is saved (`/opt/townhall/signin-data/app.json`, readable by root only), and anyone with root on the server controls that account. Use a spare account for this, never your main one.
 - **Your Hetzner token** is used by `provision.sh` and `destroy.sh` on your computer only. It is never sent to the server. Delete it in the Hetzner console when you are done.
 
 ## Reporting a problem

@@ -10,7 +10,7 @@ import { NobleEd25519Signer, bytesToHexString, hexStringToBytes } from '@farcast
 import qrcode from 'qrcode-generator';
 import type { Stored } from './keys';
 
-export type Config = { signin: boolean; appFid: number | null; defaultFid: number | null };
+export type Config = { signin: boolean; appFid: number | null; defaultFid: number | null; castLinks?: boolean };
 
 export async function loadConfig(): Promise<Config> {
   try {

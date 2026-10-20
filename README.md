@@ -61,7 +61,9 @@ Measured on the demo node (Hetzner `cx43`, 1 TB volume, Snapchain 0.14.3, Octobe
 ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | bash'
 ```
 
-Visitors see a feed with no login and sign in by approving townhall in the Farcaster app (a signed key request), with no recovery phrase. The key is made in the visitor's browser and stays there. The server holds only the key of a separate app account that signs the requests.
+Visitors see a feed with no login and choose how to sign in: approve townhall in the Farcaster app (a signed key request, no recovery phrase), or use their own keys. Either way the key is made in the visitor's browser and stays there. The server holds only the key of a separate app account that signs the requests: a new FID it registers for you, or a spare account you already have (`IMPORT=1`, run with `ssh -t`).
+
+The same service gives shared casts a link preview: `/c/<fid>/<hash>` shows the author and text in Farcaster, Telegram and other apps that read Open Graph tags.
 
 ## Repository
 

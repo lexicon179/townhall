@@ -15,11 +15,17 @@
 //
 //   node index.mjs init       make the app key (once) and print its address
 //   node index.mjs register   register an FID for it (needs a little ETH on Optimism)
-//   node index.mjs serve      HTTP on 127.0.0.1:3390 (/api/*), proxied by Caddy
+//   node index.mjs import     or use an account you already have: reads its recovery
+//                             phrase from stdin and keeps only the derived key
+//   node index.mjs serve      HTTP on 127.0.0.1:3390 (/api/*, /c/*), proxied by Caddy
+//
+// /c/<fid>/<hash> serves the client with link-preview tags for that cast, so a shared
+// cast shows its author and text in Farcaster, Telegram and the like.
 import http from 'node:http';
 import { readFileSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
 import { createPublicClient, createWalletClient, http as vhttp, formatEther, isHex } from 'viem';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { generatePrivateKey, privateKeyToAccount, mnemonicToAccount } from 'viem/accounts';
+import { bytesToHex } from 'viem';
 import { optimism } from 'viem/chains';
 import {
   ID_GATEWAY_ADDRESS, idGatewayABI, ID_REGISTRY_ADDRESS, idRegistryABI,
@@ -31,6 +37,8 @@ const FC_API = (process.env.FC_API || 'https://api.farcaster.xyz').replace(/\/$/
 const OP_RPC = process.env.OP_RPC || 'https://mainnet.optimism.io';
 const PORT = Number(process.env.PORT || 3390);
 const DEFAULT_FID = Number(process.env.DEFAULT_FID || 0); // whose follows make the signed-out feed
+const NODE_API = (process.env.NODE_API || 'http://127.0.0.1:3381').replace(/\/$/, '');
+const WWW = process.env.WWW_DIR || '/www';
 
 const load = () => (existsSync(APP_FILE) ? JSON.parse(readFileSync(APP_FILE, 'utf8')) : null);
 const save = (o) => { writeFileSync(APP_FILE, JSON.stringify(o, null, 2)); chmodSync(APP_FILE, 0o600); };
@@ -51,6 +59,21 @@ if (cmd === 'init') {
   const bal = await op().getBalance({ address: acct.address });
   const price = await op().readContract({ address: ID_GATEWAY_ADDRESS, abi: idGatewayABI, functionName: 'price' });
   console.log(JSON.stringify({ address: acct.address, fid: fid || null, balanceEth: formatEther(bal), registerPriceEth: formatEther(price) }));
+  process.exit(0);
+}
+
+if (cmd === 'import') {
+  let raw = ''; for await (const c of process.stdin) raw += c;
+  const phrase = raw.trim().toLowerCase().replace(/\s+/g, ' ');
+  raw = '';
+  let acct;
+  try { acct = mnemonicToAccount(phrase); } catch { console.error('That is not a valid recovery phrase (12 or 24 words).'); process.exit(2); }
+  const fid = await fidOf(acct.address);
+  if (!fid) { console.error(`No Farcaster account at ${acct.address}. Check the phrase (it must be the account's recovery phrase).`); process.exit(2); }
+  const old = load();
+  if (old?.fid && old.fid !== fid && process.env.FORCE !== '1') { console.error(`This server already signs as fid ${old.fid}. Set FORCE=1 to replace it.`); process.exit(2); }
+  save({ privateKey: bytesToHex(acct.getHdKey().privateKey), fid });
+  console.log(JSON.stringify({ address: acct.address, fid }));
   process.exit(0);
 }
 
@@ -110,13 +133,53 @@ async function pollRequest(token) {
   return { state: s.state, userFid: s.userFid ?? null };
 }
 
+// ---------- link previews for shared casts ----------
+
+const escHtml = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+async function nodeGet(path) {
+  const r = await fetch(`${NODE_API}/v1/${path}`, { signal: AbortSignal.timeout(4000) });
+  return r.ok ? r.json() : null;
+}
+
+async function castPage(fid, hash, origin) {
+  const page = readFileSync(`${WWW}/index.html`, 'utf8');
+  const [c, u] = await Promise.all([nodeGet(`castById?fid=${fid}&hash=${hash}`), nodeGet(`userDataByFid?fid=${fid}`)]).catch(() => [null, null]);
+  if (!c?.data?.castAddBody) return page;
+  const p = {};
+  for (const m of u?.messages ?? []) {
+    const b = m.data?.userDataBody; if (!b) continue;
+    if (b.type === 'USER_DATA_TYPE_USERNAME') p.username = b.value;
+    if (b.type === 'USER_DATA_TYPE_DISPLAY') p.display = b.value;
+    if (b.type === 'USER_DATA_TYPE_PFP') p.pfp = b.value;
+  }
+  const body = c.data.castAddBody;
+  const img = (body.embeds ?? []).find((e) => e.url && /\.(png|jpe?g|gif|webp)(\?|$)|imagedelivery\.net/i.test(e.url))?.url;
+  const title = `${p.display || p.username || `fid ${fid}`}${p.username ? ` (@${p.username})` : ''}`;
+  const text = (body.text || '').replace(/\s+/g, ' ').trim();
+  const desc = text.length > 200 ? text.slice(0, 199) + '…' : text;
+  const tags = [
+    ['og:type', 'article'], ['og:site_name', 'townhall'], ['og:title', title], ['og:description', desc],
+    ['og:url', `${origin}/c/${fid}/${hash}`], ['og:image', img || p.pfp || `${origin}/icon-512.png`],
+  ].map(([k, v]) => `<meta property="${k}" content="${escHtml(v)}">`).join('\n  ')
+    + `\n  <meta name="twitter:card" content="${img ? 'summary_large_image' : 'summary'}">\n  <meta name="description" content="${escHtml(desc)}">`;
+  return page.replace('<title>townhall</title>', `<title>${escHtml(title)} on townhall</title>\n  ${tags}`);
+}
+
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
   try {
+    const cm = url.pathname.match(/^\/c\/(\d{1,10})\/(0x[0-9a-fA-F]{40})\/?$/);
+    if (cm) {
+      const origin = `https://${String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim()}`;
+      res.setHeader('content-type', 'text/html; charset=utf-8');
+      res.setHeader('cache-control', 'public, max-age=300');
+      return res.end(await castPage(Number(cm[1]), cm[2].toLowerCase(), origin));
+    }
     if (url.pathname === '/api/config') {
       const a = load();
-      return json(res, 200, { signin: !!a?.fid, appFid: a?.fid ?? null, defaultFid: DEFAULT_FID || null });
+      return json(res, 200, { signin: !!a?.fid, appFid: a?.fid ?? null, defaultFid: DEFAULT_FID || null, castLinks: existsSync(`${WWW}/index.html`) });
     }
     if (url.pathname === '/api/signin' && req.method === 'POST') {
       if (limited(ip)) return json(res, 429, { error: 'Too many requests. Try again in a minute.' });

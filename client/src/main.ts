@@ -222,7 +222,8 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
 
 /** Link to a cast on this client. Opens for anyone, signed in or not. */
 async function shareCast(c: CastMsg, username: string | undefined, b: HTMLElement) {
-  const url = `${location.origin}/#/c/${c.data.fid}/${c.hash}`;
+  // /c/... links carry a preview of the cast when the server renders them (server/), else a plain hash link.
+  const url = cfg.castLinks ? `${location.origin}/c/${c.data.fid}/${c.hash}` : `${location.origin}/#/c/${c.data.fid}/${c.hash}`;
   const text = c.data.castAddBody.text.slice(0, 120);
   try {
     if (isMobile() && navigator.share) { await navigator.share({ url, title: `@${username ?? c.data.fid} on Farcaster`, text }); return; }
@@ -463,7 +464,7 @@ function viewSetup() {
   // Write: seed phrase -> app key via one Optimism transaction (self-hosted only)
   const w = h(`
     <section class="option">
-      <h2>${cfg.signin ? 'Use a recovery phrase' : 'Read and post'}</h2>
+      <h2>${cfg.signin ? 'Your keys' : 'Read and post'}</h2>
       <p class="muted">This client posts with its own app key. Your recovery phrase signs one KEY_ADD message that adds the key to your account, then it is cleared from the page. No transaction, no gas.</p>
       <p class="warnbox">Treat a recovery phrase like <code>rm -rf</code>: test with a test account, and only paste it into software you run yourself or from developers you trust. Prefer signing in through an app that holds your account when you can.</p>
       <textarea placeholder="Recovery phrase, 12 or 24 words" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
@@ -503,9 +504,30 @@ function viewSetup() {
   });
 
   if (cfg.signin) {
-    const adv = h('<details class="adv"><summary>Running your own copy of townhall? Use a recovery phrase</summary></details>');
-    adv.append(w);
-    $view.append(h('<div class="hero"><h1>Farcaster, only the people who showed up.</h1><p>A calm Farcaster client. Read from a real node, filter to people who voted, keep replies to mutuals.</p></div>'), signinCard(), ro, adv);
+    // Two ways in: through the app you already use, or with your own keys.
+    const choice = h(`
+      <section class="choice" role="group" aria-label="How to sign in">
+        <button class="pick" data-choice="app">
+          <b>Sign in with the Farcaster app</b>
+          <span>Approve townhall in the app you already use. No recovery phrase.</span>
+        </button>
+        <button class="pick" data-choice="keys">
+          <b>Use your own keys</b>
+          <span>Welcome to freedom. Your recovery phrase signs townhall's key directly, with no app in between.</span>
+        </button>
+      </section>`);
+    const slot = h('<div class="choice-slot"></div>');
+    const app = signinCard();
+    const pick = (which: string) => {
+      choice.querySelectorAll<HTMLElement>('.pick').forEach((x) => x.classList.toggle('on', x.dataset.choice === which));
+      slot.replaceChildren(which === 'app' ? app : w);
+    };
+    choice.addEventListener('click', (ev) => {
+      const b = (ev.target as HTMLElement).closest<HTMLElement>('.pick');
+      if (b) pick(b.dataset.choice!);
+    });
+    $view.append(h('<div class="hero"><h1>No app can ban you.</h1><p>Farcaster, read from a real node. Sign in the easy way, or hold your own keys.</p></div>'), choice, slot, ro);
+    if (resumeSignin()) pick('app');
   } else {
     $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), ro, w);
   }
@@ -596,6 +618,10 @@ document.getElementById('theme')!.addEventListener('click', () => {
   try { localStorage.setItem('theme', r.dataset.theme); } catch { /* private mode */ }
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', r.dataset.theme === 'light' ? '#f2f2ee' : '#0d0d0f');
 });
+
+// A shared /c/<fid>/<hash> link opens the same thread view.
+const shared = location.pathname.match(/^\/c\/(\d+)\/(0x[0-9a-fA-F]+)\/?$/);
+if (shared) history.replaceState(null, '', `/#/c/${shared[1]}/${shared[2]}`);
 
 window.addEventListener('hashchange', route);
 nodeStatus();
