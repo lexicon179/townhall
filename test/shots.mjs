@@ -1,0 +1,22 @@
+// Product screenshots from the test build (mock node): node test/shots.mjs <dir> [dark|light]
+import { chromium } from 'playwright';
+const [S, scheme = 'dark'] = process.argv.slice(2);
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, colorScheme: scheme });
+await ctx.addInitScript(() => { localStorage.setItem('opRpc', 'http://127.0.0.1:8546'); localStorage.setItem('baseRpc', 'http://127.0.0.1:8546'); });
+const p = await ctx.newPage();
+await p.goto('http://localhost:3999/#/setup');
+await p.waitForSelector('textarea');
+await p.screenshot({ path: `${S}/app-setup-${scheme}.png` });
+await p.fill('.option textarea', 'test test test test test test test test test test test junk');
+await p.click('[data-a=check]');
+await p.waitForFunction(() => document.querySelector('.kv')?.textContent.includes('4242'), null, { timeout: 15000 });
+await p.click('[data-a=add]');
+await p.waitForSelector('.compose', { timeout: 60000 });
+await p.goto('http://localhost:3999/#/u/100'); await p.waitForSelector('.follow .btn'); await p.click('.follow .btn'); await p.waitForTimeout(500);
+await p.goto('http://localhost:3999/#/u/200'); await p.waitForSelector('.follow .btn'); await p.click('.follow .btn'); await p.waitForTimeout(500);
+await p.goto('http://localhost:3999/#/');
+await p.waitForSelector('.cast', { timeout: 20000 }); await p.waitForTimeout(800);
+await p.fill('.compose textarea', 'gm from my own node');
+await p.screenshot({ path: `${S}/app-feed-${scheme}.png` });
+await b.close();

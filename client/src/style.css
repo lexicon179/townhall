@@ -5,26 +5,28 @@
   you have done (your likes, your follows). Everything else is ink on paper.
 */
 :root {
-  --paper: #f3f4f1;
-  --surface: #fbfbf9;
-  --ink: #16181b;
-  --muted: #6c7178;
-  --hair: #dcdfd9;
-  --signal: #1f4bff;
-  --warn: #a8620a;
-  --bad: #b3261e;
+  /* Obsidian and lime. Dark is the face of the brand; light follows the system. */
+  --paper: #0d0d0f;
+  --surface: #141416;
+  --ink: #f2f2ee;
+  --muted: #8a8a86;
+  --hair: #242428;
+  --signal: #c6ff3d;      /* lime: your node, your actions. Never body text on light. */
+  --on-signal: #0d0d0f;
+  --warn: #f0b24a;
+  --bad: #ff7a6b;
   --r-s: 8px;
   --r-l: 18px;
-  font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
-  font-optical-sizing: auto;
-  color-scheme: light;
+  font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --paper: #0f1113; --surface: #15181b; --ink: #ecede9; --muted: #8e939a; --hair: #262a2f;
-    --signal: #7590ff; --warn: #e3a04d; --bad: #f2867e; color-scheme: dark;
+    --paper: #f2f2ee; --surface: #fafaf7; --ink: #0d0d0f; --muted: #6e6e6a; --hair: #dcdcd6;
+    --signal: #4f7a00; --on-signal: #f2f2ee; --warn: #9a5b00; --bad: #b3261e; color-scheme: light;
   }
 }
+code, .mono, .node { font-family: 'Geist Mono Variable', ui-monospace, monospace; }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -43,7 +45,8 @@ button, input, textarea { font: inherit; color: inherit; }
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--hair);
 }
-.brand { font-weight: 750; font-size: 19px; letter-spacing: -0.03em; text-decoration: none; }
+.brand { font-weight: 650; font-size: 19px; letter-spacing: -0.035em; text-decoration: none; display: inline-flex; align-items: center; gap: 9px; }
+.brand svg { width: 28px; height: 28px; border-radius: 7px; flex: none; }
 .node { font-size: 13.5px; color: var(--muted); display: flex; align-items: center; gap: 7px; order: 3; flex-basis: 100%; }
 .node b { color: var(--ink); font-weight: 600; }
 .node::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -62,7 +65,8 @@ main { max-width: 620px; margin: 0 auto; padding: 0 18px 96px; }
   padding: 9px 16px; cursor: pointer; font-size: 14.5px; font-weight: 550; min-height: 40px;
 }
 .btn:hover { border-color: var(--muted); }
-.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.primary { background: var(--signal); color: var(--on-signal); border-color: var(--signal); }
+.btn.primary:hover { filter: brightness(1.06); }
 .btn:disabled { opacity: 0.35; cursor: default; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
@@ -163,7 +167,7 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 
 /* voters */
 .voted { font-size: 12px; font-weight: 600; color: var(--signal); border: 1px solid color-mix(in srgb, var(--signal) 35%, transparent); border-radius: 999px; padding: 0 7px; line-height: 18px; }
-.chip.voters:not(.off) { background: var(--signal); border-color: var(--signal); color: #fff; }
+.chip.voters:not(.off) { background: var(--signal); border-color: var(--signal); color: var(--on-signal); }
 .seg .chip.off { text-decoration: none; }
 
 /* hosted mode: sign in with the Farcaster app, guest feed */

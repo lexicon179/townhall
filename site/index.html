@@ -3,13 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0d0d0f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23c6ff3d%22/%3E%3Cg%20transform%3D%22translate%2810%208%29%20scale%28.8%29%22%3E%3Cpath%20d%3D%22M16%2032%20L22%206%20L38%2024%20H62%20L78%206%20L84%2032%20V76%20Q84%2092%2068%2092%20H32%20Q16%2092%2016%2076%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Cpath%20d%3D%22M20%2042%20L50%2050%20L80%2042%20V54%20L50%2062%20L20%2054%20Z%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M30%2050%20L42%2053%20V56%20L30%2053%20Z%20M70%2050%20L58%2053%20V56%20L70%2053%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Crect%20x%3D%2228%22%20y%3D%2270%22%20width%3D%2244%22%20height%3D%2212%22%20rx%3D%223%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M36%2070%20L40%2077%20L44%2070%20Z%20M56%2070%20L60%2077%20L64%2070%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3C/g%3E%3C/svg%3E">
 <title>townhall · your own Farcaster client and node in three commands</title>
 <meta name="description" content="Run a Snapchain read node and your own Farcaster client in three commands. No API keys. A tutorial that explains every piece as you go.">
 <style>
-:root{--bg:#fbfaf8;--fg:#141414;--muted:#666;--line:#e6e3de;--card:#fff;--code:#f2efe9;--accent:#2b59ff;--warn:#b45309;
-  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-@media (prefers-color-scheme:dark){:root{--bg:#0d0d0e;--fg:#efefef;--muted:#9b9b9b;--line:#26262a;--card:#151517;--code:#1c1c20;--accent:#8aa6ff;--warn:#f0a35a}}
+@font-face{font-family:Geist;src:url(fonts/geist.woff2) format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Geist Mono";src:url(fonts/geist-mono.woff2) format("woff2");font-weight:100 900;font-display:swap}
+/* Obsidian and lime. Dark is the brand's face; light follows the reader's system. */
+:root{--bg:#0d0d0f;--fg:#f2f2ee;--muted:#8a8a86;--line:#242428;--card:#141416;--code:#17171a;--accent:#c6ff3d;--on-accent:#0d0d0f;--warn:#f0b24a;
+  font-family:Geist,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:dark}
+@media (prefers-color-scheme:light){:root{--bg:#f2f2ee;--fg:#0d0d0f;--muted:#6e6e6a;--line:#dcdcd6;--card:#fafaf7;--code:#e9e9e3;--accent:#4f7a00;--on-accent:#f2f2ee;--warn:#9a5b00;color-scheme:light}}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font-size:17px;line-height:1.6}
 main{max-width:760px;margin:0 auto;padding:24px 18px 120px}
@@ -20,13 +25,13 @@ h2{font-size:26px;letter-spacing:-.02em;margin:56px 0 12px;padding-top:8px}
 h3{font-size:19px;margin:30px 0 8px}
 p,li{max-width:68ch}.lead{font-size:20px;color:var(--muted)}
 a{color:var(--accent)}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--code);padding:.1em .35em;border-radius:5px}
+code{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--code);padding:.1em .35em;border-radius:5px}
 pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:12px;padding:14px 72px 14px 16px;overflow-x:auto;font-size:14px;line-height:1.5}
 pre code{background:none;padding:0;font-size:inherit}
 .copy{position:absolute;top:8px;right:8px;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:3px 10px;cursor:pointer}
 .steps{counter-reset:s;list-style:none;padding:0}
 .steps>li{counter-increment:s;position:relative;padding-left:44px;margin:18px 0}
-.steps>li::before{content:counter(s,decimal);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:700;font-size:14px}
+.steps>li::before{content:counter(s,decimal);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:14px}
 .steps.zero>li::before{content:counter(s,decimal);}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:16px 0}
 .note{border-left:3px solid var(--accent);padding:6px 14px;margin:16px 0;color:var(--fg)}
@@ -42,20 +47,31 @@ th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px 6px;vertic
 .diagram path.w{stroke:var(--accent)}
 dl dt{font-weight:700;margin-top:14px}dl dd{margin:2px 0 0 0;color:var(--fg)}
 .small{font-size:14px;color:var(--muted)}
+nav.toc .brand{display:inline-flex;align-items:center;gap:8px;color:var(--fg);font-weight:650;letter-spacing:-.03em;margin-right:22px}
+nav.toc .brand svg{width:22px;height:22px;border-radius:5px}
+.hero{display:grid;grid-template-columns:1fr 250px;gap:36px;align-items:center;margin:20px 0 8px}
+.hero .shot{width:100%;height:auto;border-radius:28px;border:1px solid var(--line);box-shadow:0 30px 60px -30px rgba(0,0,0,.6);display:block}
+.hero figcaption{font-size:12.5px;color:var(--muted);margin-top:8px;text-align:center}
+.hero figure{margin:0}
+@media (max-width:720px){.hero{grid-template-columns:1fr}.hero figure{max-width:260px;margin:0 auto}}
+main{max-width:860px}
+p,li{max-width:66ch}
 footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
 </style>
 </head>
 <body>
 <nav class="toc">
-  <a href="#quickstart">Quickstart</a><a href="#what">What you get</a><a href="#before">Before you start</a>
+  <a class="brand" href="#"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#c6ff3d"/><g transform="translate(10 8) scale(.8)"><path d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z" fill="#0d0d0f"/><path d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z" fill="#c6ff3d"/><path d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z" fill="#0d0d0f"/><rect x="28" y="70" width="44" height="12" rx="3" fill="#c6ff3d"/><path d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z" fill="#0d0d0f"/></g></svg>townhall</a><a href="#quickstart">Quickstart</a><a href="#what">What you get</a><a href="#before">Before you start</a>
   <a href="#step0">0 · Server</a><a href="#step1">1 · Node</a><a href="#step2">2 · Client</a>
   <a href="#use">Using it</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a>
   <a href="#security">Security</a><a href="#trouble">Troubleshooting</a><a href="#cost">Cost & cleanup</a>
 </nav>
 <main>
 
+<div class="hero"><div>
 <h1>Your own Farcaster client and node, in three commands.</h1>
 <p class="lead">A Snapchain read node on a server you control, and a client that reads from it and posts with its own key. No API keys from anyone. This page explains every piece as you go, so at the end you know how Farcaster actually works.</p>
+</div><figure><img class="shot" src="img/app-feed.webp" width="390" height="844" alt="townhall on a phone: home feed read from your own node, with a cast being written"><figcaption>The client, test build</figcaption></figure></div>
 
 <h2 id="quickstart">Quickstart</h2>
 <p>From your computer, with a <a href="#before">Hetzner Cloud API token</a>:</p>

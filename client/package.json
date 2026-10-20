@@ -13,7 +13,8 @@
   "license": "MIT",
   "dependencies": {
     "@farcaster/core": "^0.20.0",
-    "@fontsource-variable/schibsted-grotesk": "^5.3.0",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "buffer": "^6.0.3",
     "qrcode-generator": "^1.4.4",
     "viem": "^2.57.7"
