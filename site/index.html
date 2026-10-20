@@ -131,27 +131,24 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 .nodecard b{display:block;font-family:"Fira Mono",ui-monospace,monospace;font-size:19px;font-weight:400}
 .nodecard small{font-size:13px;color:var(--muted)}
 @media (max-width:600px){.nodecard .grid div{padding:12px 12px}.nodecard b{font-size:14.5px}.nodecard small{font-size:12px}}
-.hero{max-width:1120px}
+.hero{max-width:1120px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:40px;align-items:start}
 .hero-txt{min-width:0}
-/* the gargoyle perches on the try box, like one on a ledge */
-.perch{position:relative;max-width:620px;margin-top:190px}
-.perch .try{position:relative;z-index:1;margin-top:0}
-.hero-garg{position:absolute;z-index:0;right:24px;top:-184px;width:300px;height:300px}
-.hero-garg svg{width:100%;height:100%;display:block}
-.g-head{fill:#c6ff3d}.g-mask{fill:#0b0b0c}.g-glow{fill:#c6ff3d}
-:root[data-theme=light] .g-head{fill:#0d0d0f}:root[data-theme=light] .g-mask{fill:#c6ff3d}:root[data-theme=light] .g-glow{fill:#0d0d0f}
+.hero-garg{position:relative;width:380px;margin-top:-10px}
+.hero-garg svg{width:100%;height:auto;display:block}
+.gb{fill:#c6ff3d;stroke:var(--bg);stroke-width:6;stroke-linejoin:round}.gm{fill:var(--bg)}.ge{fill:#c6ff3d}.gs{fill:var(--line)}.gs2{fill:var(--card)}
+:root[data-theme=light] .gb{fill:#0d0d0f}:root[data-theme=light] .gm{fill:#c6ff3d}:root[data-theme=light] .ge{fill:#0d0d0f}
 .g-eyes,.g-pupils{transform-box:fill-box;transform-origin:center;transition:transform .35s ease}
 .hero-garg[data-mood=awake] .g-eyes{animation:gblink 6.5s infinite}
 .hero-garg[data-mood=syncing] .g-eyes{transform:scaleY(.55)}
 .hero-garg[data-mood=asleep] .g-eyes{transform:scaleY(.12)}
 .hero-garg[data-mood=asleep] .g-pupils{opacity:0}
-.gz{position:absolute;right:-6px;top:6px;font-family:"Fira Mono",monospace;font-weight:600;color:var(--accent);opacity:0;font-size:30px}
-.gz+.gz{right:-30px;top:-24px;font-size:42px}
+.gz{position:absolute;left:66%;top:6%;font-family:"Fira Mono",monospace;font-weight:600;color:var(--accent);opacity:0;font-size:34px}
+.gz+.gz{left:74%;top:-2%;font-size:48px}
 .hero-garg[data-mood=asleep] .gz{animation:gz 2.6s ease-out infinite}
 .hero-garg[data-mood=asleep] .gz+.gz{animation-delay:1.1s}
 @keyframes gblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
 @keyframes gz{0%{opacity:0;transform:translate(0,10px)}30%{opacity:1}100%{opacity:0;transform:translate(16px,-26px)}}
-@media (max-width:600px){.perch{margin-top:118px}.hero-garg{width:170px;height:170px;top:-104px;right:16px}}
+@media (max-width:900px){.hero{grid-template-columns:1fr;gap:0}.hero-garg{order:-1;width:220px;margin:0 0 8px -8px}.gz{font-size:22px}.gz+.gz{font-size:30px}}
 @media (prefers-reduced-motion:reduce){.hero-garg *{animation:none!important;transition:none!important}}
 .qsh{margin:0 0 14px}
 .proof{max-width:1120px;margin:0 auto;padding:8px 24px 24px}
@@ -186,10 +183,11 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <h1>No app can <span class="hl">ban</span> you.</h1>
   <p class="lead2">Your own Farcaster client and Snapchain node, in three commands.</p>
   <p class="sub">Everything runs on a server you control, with no API keys from anyone. Ten minutes of typing tonight, synced by tomorrow afternoon.</p>
-  <div class="perch"><div class="hero-garg" id="garg" data-mood="awake" aria-hidden="true"><svg viewBox="0 0 100 100"><g transform="translate(10 8) scale(.8)"><path class="g-head" d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z"/><g class="g-eyes"><path class="g-mask" d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z"/><path class="g-pupils g-glow" d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z"/></g><rect class="g-mask" x="28" y="70" width="44" height="12" rx="3"/><path class="g-glow" d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z"/></g></svg><span class="gz">z</span><span class="gz">z</span></div><form class="try" id="try"><input name="u" placeholder="Your Farcaster username" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your Farcaster username"><button type="submit">Open my feed</button></form></div>
+  <form class="try" id="try"><input name="u" placeholder="Your Farcaster username" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your Farcaster username"><button type="submit">Open my feed</button></form>
   <p class="try-note">Read-only, straight from our node. Nothing to sign. <a href="#quickstart">Or run your own in three commands ↓</a></p>
   <div class="nodecard" id="nodecard" aria-live="polite"><div class="hd"><i></i>Demo node<span data-k="st">connecting…</span></div><div class="grid"><div><b data-k="h">—</b><small>block</small></div><div><b data-k="m">—</b><small>messages stored</small></div><div><b data-k="a">—</b><small>accounts</small></div></div></div>
 </div>
+<div class="hero-garg" id="garg" data-mood="awake" aria-hidden="true"><svg viewBox="0 0 400 460"><rect class="gs" x="30" y="392" width="340" height="22" rx="3"/><rect class="gs2" x="44" y="414" width="312" height="46"/><path class="gb" d="M150 196 L92 120 L58 36 L70 112 L28 92 L60 160 L22 168 L84 214 L132 250 Z"/><path class="gb" d="M250 196 L308 120 L342 36 L330 112 L372 92 L340 160 L378 168 L316 214 L268 250 Z"/><path class="gb" d="M140 186 H260 Q276 188 278 206 L286 330 L262 392 H138 L114 330 L122 206 Q124 188 140 186 Z"/><path class="gb" d="M126 286 Q96 290 86 318 L92 372 Q94 392 112 392 H152 L150 360 L160 320 Z"/><path class="gb" d="M274 286 Q304 290 314 318 L308 372 Q306 392 288 392 H248 L250 360 L240 320 Z"/><path class="gb" d="M98 388 L102 404 L110 390 L116 406 L124 390 L130 406 L138 390 L144 404 L150 388 Z"/><path class="gb" d="M250 388 L256 404 L262 390 L270 406 L276 390 L284 406 L290 390 L298 404 L302 388 Z"/><path class="gb" d="M138 206 Q112 212 112 244 L136 330 Q140 346 156 346 L176 344 L172 322 L158 316 L154 250 Z"/><path class="gb" d="M262 206 Q288 212 288 244 L264 330 Q260 346 244 346 L224 344 L228 322 L242 316 L246 250 Z"/><path class="gb" d="M160 340 L156 386 L166 372 L172 390 L180 372 L188 388 L192 344 Z"/><path class="gb" d="M240 340 L244 386 L234 372 L228 390 L220 372 L212 388 L208 344 Z"/><g transform="translate(110 30) scale(1.8)"><path class="gb" stroke-width="3.3" d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z"/><g class="g-eyes"><path class="gm" d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z"/><path class="ge g-pupils" d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z"/></g><rect class="gm" x="28" y="70" width="44" height="12" rx="3"/><path class="ge" d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z"/></g></svg><span class="gz">z</span><span class="gz">z</span></div>
 </header>
 
 <section id="proof" class="proof">
