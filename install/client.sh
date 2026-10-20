@@ -43,7 +43,7 @@ $SUDO docker run --rm -v "$APP_DIR:/out" node:22-alpine sh -c "
 # 3. Caddy: HTTPS certificate, static client, /v1 → node
 $SUDO tee "$APP_DIR/Caddyfile" >/dev/null <<EOF
 $SITES {
-	encode gzip
+	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff

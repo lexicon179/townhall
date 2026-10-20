@@ -12,6 +12,7 @@
  * 5. Once it merges, the key is active. The seed phrase is dropped from memory;
  *    only the app key is kept (in this browser).
  */
+import './polyfill';
 import {
   ID_REGISTRY_ADDRESS, idRegistryABI, NobleEd25519Signer, ViemLocalEip712Signer,
   bytesToHexString, hexStringToBytes, makeKeyAddBody, makeKeyAdd, getFarcasterTime,
@@ -26,13 +27,8 @@ import { submitRaw } from './msg';
 export const OP_RPC = localStorage.getItem('opRpc') || 'https://mainnet.optimism.io';
 const op = () => createPublicClient({ chain: optimism, transport: http(OP_RPC) });
 
-export type Stored = { fid: number; key: `0x${string}`; pub: `0x${string}`; app: 'townhall' };
-
-export function loadKey(): Stored | null {
-  try { return JSON.parse(localStorage.getItem('appKey') || 'null'); } catch { return null; }
-}
-export function saveKey(s: Stored) { localStorage.setItem('appKey', JSON.stringify(s)); }
-export function forgetKey() { localStorage.removeItem('appKey'); }
+import { saveKey, forgetKey, type Stored } from './store';
+export { loadKey, saveKey, forgetKey, type Stored } from './store';
 
 export function signerOf(s: Stored) {
   const r = hexStringToBytes(s.key);

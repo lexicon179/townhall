@@ -1,3 +1,4 @@
+import './polyfill';
 /**
  * Writing: build a protocol message, sign it with the app key, submit the raw
  * protobuf bytes to your node. Your read node validates it and relays it to the

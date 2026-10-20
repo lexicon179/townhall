@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Faster first load: the client starts with a 60 KB script (was 3.6 MB). Signing, posting and the Base lookup load on first use; the "voted" badge appears once Base answers instead of holding the cast back. The web server also offers zstd.
 - Self-hosted sign-in page: your own keys, with a pointer to delegated sign-in (one more command); the guide explains it.
 - The node status line has its own row, so long statuses no longer push the header around.
 - Link previews for shared casts on every install: `client.sh` starts the preview service; `signin.sh` adds sign-in to it.

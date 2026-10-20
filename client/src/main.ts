@@ -1,13 +1,14 @@
-import './polyfill';
 import './style.css';
 import {
   info, castsByFid, castsByParent, following, followers, castsByMention, profile, fidByName, appOfCast,
   isFollowing, liked, signerActive, toDate, linkCount, castById, type CastMsg,
 } from './hub';
-import { voted } from './votes';
-import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, revokeKey, type Stored } from './keys';
+import { loadKey, saveKey, forgetKey, type Stored } from './store';
+// Signing, posting and the Base lookup load on first use, so reading starts with a small script.
+const K = () => import('./keys');
+const M = () => import('./msg');
+const V = () => import('./votes');
 import { loadConfig, startSignin, resumeSignin, dropPending, waitSignin, qrSvg, isMobile, type Config, type Pending } from './signin';
-import { cast, react, follow, deleteCast } from './msg';
 import { viewLive, stopLive } from './live';
 
 const $view = document.getElementById('view')!;
@@ -125,16 +126,14 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
   const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e));
   const quoted = opts.nested ? [] : (body.embeds ?? []).filter((e) => e.castId).slice(0, 1);
   const mine = key && c.data.fid === key.fid;
-  const didVote = await Promise.race([voted(c.data.fid), new Promise<null>((r) => setTimeout(() => r(null), 2500))]);
 
   const el = h(`
-    <article class="cast${opts.nested ? ' nested' : ''}" data-app="${app ?? ''}" data-voted="${didVote ? 1 : 0}">
+    <article class="cast${opts.nested ? ' nested' : ''}" data-app="${app ?? ''}" data-voted="0">
       <a href="#/u/${p.fid}">${avatar(p)}</a>
       <div>
         <div class="head">
           <a class="name" href="#/u/${p.fid}">${esc(p.display || p.username || `fid ${p.fid}`)}</a>
           <span class="handle">@${esc(p.username || String(p.fid))}</span>
-          ${didVote ? '<span class="voted" title="Accepted the social contract in the Farcaster network vote (VOTE NFT on Base, token id = fid)">voted</span>' : ''}
           <a class="time" href="#/c/${c.data.fid}/${c.hash}">${ago(toDate(c.data.timestamp))}</a>
           ${appName ? `<span class="via" title="The app that signed this cast (app fid ${app})">via ${esc(appName)}</span>` : ''}
         </div>
@@ -157,6 +156,13 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
     </article>`);
 
   const target = { fid: c.data.fid, hash: c.hash };
+  // The "voted" badge arrives after the cast is on screen: it needs a lookup on Base.
+  V().then((m) => m.voted(c.data.fid)).then((v) => {
+    if (!v) return;
+    el.dataset.voted = '1';
+    el.querySelector('.handle')?.insertAdjacentHTML('afterend', '<span class="voted" title="Accepted the social contract in the Farcaster network vote (VOTE NFT on Base, token id = fid)">voted</span>');
+    el.dispatchEvent(new CustomEvent('voted', { bubbles: true }));
+  }).catch(() => { /* Base not reachable: no badge */ });
   for (const q of quoted) {
     const qc = await castById(q.castId!.fid, q.castId!.hash);
     const slot = el.querySelector('.quoted-slot')!;
@@ -204,13 +210,13 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
         if (!slot.childElementCount) slot.append(composer(undefined, () => (slot.innerHTML = ''), target));
       } else if (a === 'like') {
         const on = !b.classList.contains('on');
-        await react(key, 'like', target, on);
+        await (await M()).react(key, 'like', target, on);
         b.classList.toggle('on', on);
       } else if (a === 'recast') {
-        await react(key, 'recast', target, true);
+        await (await M()).react(key, 'recast', target, true);
         b.classList.add('on');
       } else if (a === 'delete' && confirm('Delete this cast?')) {
-        await deleteCast(key, c.hash);
+        await (await M()).deleteCast(key, c.hash);
         el.remove();
       }
     } catch (e) {
@@ -274,7 +280,7 @@ function composer(parent?: { fid: number; hash: string }, done?: () => void, quo
     if (!key || !ta.value.trim()) return;
     btn.disabled = true; err.textContent = '';
     try {
-      await cast(key, ta.value, parent, quote);
+      await (await M()).cast(key, ta.value, parent, quote);
       ta.value = '';
       err.innerHTML = `<span class="muted">Sent. Your node relayed it to the network; it appears once a validator includes it, usually within seconds.</span>`;
       done?.();
@@ -316,6 +322,7 @@ async function viewFeed() {
     const hide = hiddenApps.has(Number(el.dataset.app || 0)) || (votersOnly && el.dataset.voted !== '1');
     el.style.display = hide ? 'none' : '';
   });
+  list.addEventListener('voted', () => { if (votersOnly) apply(); });
   const vchip = filter.querySelector<HTMLButtonElement>('.voters')!;
   vchip.addEventListener('click', () => {
     votersOnly = !votersOnly; localStorage.setItem('votersOnly', votersOnly ? '1' : '0');
@@ -356,7 +363,7 @@ async function viewProfile(fid: number) {
     const b = h(`<button class="btn ${on ? '' : 'primary'}">${on ? 'Following' : 'Follow'}</button>`) as HTMLButtonElement;
     b.addEventListener('click', async () => {
       b.disabled = true;
-      try { await follow(key!, fid, !on); on = !on; b.textContent = on ? 'Following' : 'Follow'; b.classList.toggle('primary', !on); }
+      try { await (await M()).follow(key!, fid, !on); on = !on; b.textContent = on ? 'Following' : 'Follow'; b.classList.toggle('primary', !on); }
       catch (e) { alert((e as Error).message); }
       b.disabled = false;
     });
@@ -500,7 +507,7 @@ function viewSetup() {
   w.querySelector('[data-a=check]')!.addEventListener('click', async () => {
     err.textContent = ''; kv.innerHTML = ''; addBtn.disabled = true;
     try {
-      const r = await inspectSeed(ta.value);
+      const r = await (await K()).inspectSeed(ta.value);
       const p = r.fid ? await profile(r.fid) : null;
       kv.innerHTML = `<b>Custody</b><span>${r.custody}</span><b>FID</b><span>${r.fid || 'none'}${p?.username ? ` (@${esc(p.username)})` : ''}</span>`;
       if (!r.fid) err.textContent = 'No Farcaster account belongs to this phrase.';
@@ -512,7 +519,7 @@ function viewSetup() {
   addBtn.addEventListener('click', async () => {
     addBtn.disabled = true; err.textContent = '';
     try {
-      const { stored } = await addAppKey(ta.value, (s) => (status.textContent = s + '…'));
+      const { stored } = await (await K()).addAppKey(ta.value, (s) => (status.textContent = s + '…'));
       ta.value = '';
       key = stored;
       localStorage.setItem('readFid', String(stored.fid));
@@ -609,7 +616,7 @@ function viewSettings() {
   s.addEventListener('click', (e) => {
     const a = (e.target as HTMLElement).dataset.a;
     if (a === 'revoke' && key) {
-      revokeKey(key).then(() => { key = null; localStorage.removeItem('readFid'); location.hash = '#/'; renderMe(); route(); })
+      K().then((k) => k.revokeKey(key!)).then(() => { key = null; localStorage.removeItem('readFid'); location.hash = '#/'; renderMe(); route(); })
         .catch((x) => { s.querySelector('.err')!.textContent = (x as Error).message; });
       return;
     }
@@ -658,3 +665,5 @@ window.addEventListener('hashchange', route);
 nodeStatus();
 setInterval(nodeStatus, 15000);
 loadConfig().then((c) => { cfg = c; renderMe(); route(); });
+// Signed in? Fetch the posting code in the background, so the first like or cast is instant.
+if (key) setTimeout(() => { M().catch(() => {}); }, 3000);
