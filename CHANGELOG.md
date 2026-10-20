@@ -5,6 +5,8 @@
 - Live view: the network's event log as your node receives it.
 - Inspect a cast's protocol message.
 - Search by username or FID; follower and following counts; Farcaster-style relative times.
+- Share a cast: a link on your own client that opens for anyone (share sheet on phones).
+- Quote casts, and quoted casts shown inside the cast that quotes them.
 - Fix: deleted casts (CAST_REMOVE) no longer break the feed.
 
 ## 0.1.0 · 2026-10-20

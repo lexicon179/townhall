@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 const S = process.argv[2];
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport: { width: 420, height: 900 }, deviceScaleFactor: 2 });
+await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: 'http://localhost:3999' });
 await ctx.addInitScript(() => { localStorage.setItem('opRpc', 'http://127.0.0.1:8546'); localStorage.setItem('baseRpc', 'http://127.0.0.1:8546'); });
 const p = await ctx.newPage();
 const logs = []; p.on('console', (m) => logs.push(m.type() + ': ' + m.text())); p.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
@@ -64,19 +65,35 @@ await p.waitForSelector('.cast');
 await p.waitForTimeout(600);
 ok('thread view shows the reply', (await p.$$eval('.cast .text', (e) => e.map((x) => x.textContent))).includes('replying from townhall'));
 
+// share and quote, from the thread view
+const root = p.locator('.cast').first();
+await root.locator('[data-a=share]').click();
+await p.waitForTimeout(300);
+const copied = await p.evaluate(() => navigator.clipboard.readText());
+ok(`share copies a link to the cast on this client (${copied.replace('http://localhost:3999', '')})`, copied === 'http://localhost:3999/' + href);
+await root.locator('[data-a=quote]').click();
+await root.locator('textarea').fill('quoting this from townhall');
+await root.locator('.btn.primary', { hasText: 'Quote' }).click();
+await p.waitForTimeout(800);
+await p.goto('http://localhost:3999/#/');
+await p.waitForSelector('.quoted', { timeout: 20000 });
+const q = p.locator('.cast:not(.nested)', { hasText: 'quoting this from townhall' });
+ok('quote cast shows the quoted cast inside it', (await q.locator('.quoted').textContent()).includes('gm from the main app'));
+await p.screenshot({ path: `${S}/sc-quote.png`, fullPage: true });
+
 // filter by client
 await p.goto('http://localhost:3999/#/');
 await p.waitForSelector('.chips .chip', { timeout: 20000 });
 await p.screenshot({ path: `${S}/sc-feed.png`, fullPage: true });
 await p.locator('.chip', { hasText: 'farcaster' }).click();
-const visible = await p.$$eval('.cast', (els) => els.filter((e) => e.style.display !== 'none').map((e) => e.querySelector('.via')?.textContent));
+const visible = await p.$$eval('.cast:not(.nested)', (els) => els.filter((e) => e.style.display !== 'none').map((e) => e.querySelector('.via')?.textContent));
 ok(`hiding a client removes its casts (${visible.join(', ')})`, visible.length > 0 && visible.every((v) => v !== 'via farcaster'));
 await p.screenshot({ path: `${S}/sc-filtered.png`, fullPage: true });
 
 // voters filter: nobody holds a VOTE NFT on the test chain, so "Voters only" hides everything
 await p.locator('.chip', { hasText: 'farcaster' }).click(); // show the app again
 await p.locator('.chip.voters').click();
-ok('voters-only hides non-voters', await p.$$eval('.cast', (els) => els.every((e) => e.style.display === 'none')));
+ok('voters-only hides non-voters', await p.$$eval('.cast:not(.nested)', (els) => els.every((e) => e.style.display === 'none')));
 await p.locator('.chip.voters').click();
 
 // replies: mutuals only by default

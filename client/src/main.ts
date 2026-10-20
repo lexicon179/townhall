@@ -2,7 +2,7 @@ import './polyfill';
 import './style.css';
 import {
   info, castsByFid, castsByParent, following, followers, castsByMention, profile, fidByName, appOfCast,
-  isFollowing, liked, signerActive, toDate, linkCount, type CastMsg,
+  isFollowing, liked, signerActive, toDate, linkCount, castById, type CastMsg,
 } from './hub';
 import { voted } from './votes';
 import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, revokeKey, type Stored } from './keys';
@@ -109,10 +109,12 @@ const ICON = {
   reply: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9l-5 4z"/></svg>',
   like: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
   recast: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>',
+  quote: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h5v5c0 2.5-1.5 4-4 4.5M14 8h5v5c0 2.5-1.5 4-4 4.5"/></svg>',
+  share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg>',
   delete: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4.5h4V7M7 7l1 12.5h8L17 7"/></svg>',
 };
 
-async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
+async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean } = {}) {
   const p = await profile(c.data.fid);
   const body = c.data.castAddBody;
   const app = await appOfCast(c);
@@ -121,11 +123,12 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
   const parentName = parent && opts.showParent !== false ? (await profile(parent.fid)).username || `fid:${parent.fid}` : null;
   const images = (body.embeds ?? []).filter((e) => e.url && /\.(png|jpe?g|gif|webp)(\?|$)|imagedelivery\.net/i.test(e.url));
   const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e));
+  const quoted = opts.nested ? [] : (body.embeds ?? []).filter((e) => e.castId).slice(0, 1);
   const mine = key && c.data.fid === key.fid;
   const didVote = await Promise.race([voted(c.data.fid), new Promise<null>((r) => setTimeout(() => r(null), 2500))]);
 
   const el = h(`
-    <article class="cast" data-app="${app ?? ''}" data-voted="${didVote ? 1 : 0}">
+    <article class="cast${opts.nested ? ' nested' : ''}" data-app="${app ?? ''}" data-voted="${didVote ? 1 : 0}">
       <a href="#/u/${p.fid}">${avatar(p)}</a>
       <div>
         <div class="head">
@@ -139,18 +142,33 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
         <div class="text">${await renderText(c)}</div>
         ${images.map((e) => `<img class="embed-img" src="${esc(e.url!)}" alt="" loading="lazy">`).join('')}
         ${links.map((e) => `<a class="embed" href="${esc(e.url!)}" target="_blank" rel="noreferrer">${esc(e.url!)}</a>`).join('')}
-        <div class="actions">
+        <div class="quoted-slot"></div>
+        ${opts.nested ? '' : `<div class="actions">
           <button data-a="reply" aria-label="Reply" title="Reply">${ICON.reply}</button>
           <button data-a="like" aria-label="Like" title="Like">${ICON.like}</button>
           <button data-a="recast" aria-label="Recast" title="Recast">${ICON.recast}</button>
+          <button data-a="quote" aria-label="Quote" title="Quote">${ICON.quote}</button>
+          <button data-a="share" aria-label="Share" title="Copy link">${ICON.share}</button>
           ${mine ? `<button data-a="delete" aria-label="Delete" title="Delete">${ICON.delete}</button>` : ''}
           <button data-a="inspect" class="inspect" aria-label="Inspect the protocol message" title="Inspect the protocol message">{ }</button>
         </div>
-        <div class="slot"></div>
+        <div class="slot"></div>`}
       </div>
     </article>`);
 
   const target = { fid: c.data.fid, hash: c.hash };
+  for (const q of quoted) {
+    const qc = await castById(q.castId!.fid, q.castId!.hash);
+    const slot = el.querySelector('.quoted-slot')!;
+    if (!qc) { slot.innerHTML = `<a class="quoted missing" href="#/c/${q.castId!.fid}/${q.castId!.hash}">Quoted cast not on your node</a>`; continue; }
+    const card = h(`<div class="quoted" role="link" tabindex="0"></div>`);
+    const open = () => (location.hash = `#/c/${qc.data.fid}/${qc.hash}`);
+    card.addEventListener('click', (ev) => { if (!(ev.target as HTMLElement).closest('a')) open(); });
+    card.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') open(); });
+    card.append(await castEl(qc, { nested: true, showParent: false }));
+    slot.append(card);
+  }
+  if (opts.nested) return el;
   const likeBtn = el.querySelector<HTMLButtonElement>('[data-a=like]')!;
   if (key) liked(key.fid, target).then((on) => on && likeBtn.classList.add('on'));
 
@@ -174,12 +192,16 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
         </div>`;
       return;
     }
-    if (!key) { alert('Read-only mode. Connect your account in settings to write.'); return; }
+    if (b.dataset.a === 'share') { await shareCast(c, p.username, b); return; }
+    if (!key) { location.hash = '#/setup'; return; }
     const a = b.dataset.a;
     try {
       if (a === 'reply') {
         const slot = el.querySelector('.slot')!;
         if (!slot.childElementCount) slot.append(composer(target, () => (slot.innerHTML = '')));
+      } else if (a === 'quote') {
+        const slot = el.querySelector('.slot')!;
+        if (!slot.childElementCount) slot.append(composer(undefined, () => (slot.innerHTML = ''), target));
       } else if (a === 'like') {
         const on = !b.classList.contains('on');
         await react(key, 'like', target, on);
@@ -198,11 +220,24 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean } = {}) {
   return el;
 }
 
-function composer(parent?: { fid: number; hash: string }, done?: () => void) {
+/** Link to a cast on this client. Opens for anyone, signed in or not. */
+async function shareCast(c: CastMsg, username: string | undefined, b: HTMLElement) {
+  const url = `${location.origin}/#/c/${c.data.fid}/${c.hash}`;
+  const text = c.data.castAddBody.text.slice(0, 120);
+  try {
+    if (isMobile() && navigator.share) { await navigator.share({ url, title: `@${username ?? c.data.fid} on Farcaster`, text }); return; }
+    await navigator.clipboard.writeText(url);
+    b.classList.add('on'); b.title = 'Link copied';
+    setTimeout(() => { b.classList.remove('on'); b.title = 'Copy link'; }, 1500);
+  } catch { /* share sheet closed */ }
+}
+
+function composer(parent?: { fid: number; hash: string }, done?: () => void, quote?: { fid: number; hash: string }) {
+  const small = !!(parent || quote);
   const el = h(`
-    <div class="compose ${parent ? 'is-reply' : ''}">
-      <textarea rows="${parent ? 2 : 3}" maxlength="1024" placeholder="${parent ? 'Write a reply' : 'Write a cast'}"></textarea>
-      <div class="row"><span class="count"></span><button class="btn primary" disabled>${parent ? 'Reply' : 'Cast'}</button></div>
+    <div class="compose ${small ? 'is-reply' : ''}">
+      <textarea rows="${small ? 2 : 3}" maxlength="1024" placeholder="${parent ? 'Write a reply' : quote ? 'Add your take' : 'Write a cast'}"></textarea>
+      <div class="row"><span class="count"></span><button class="btn primary" disabled>${parent ? 'Reply' : quote ? 'Quote' : 'Cast'}</button></div>
       <div class="err"></div>
     </div>`);
   const ta = el.querySelector('textarea')!, btn = el.querySelector('button')!, err = el.querySelector('.err')!, count = el.querySelector('.count')!;
@@ -216,7 +251,7 @@ function composer(parent?: { fid: number; hash: string }, done?: () => void) {
     if (!key || !ta.value.trim()) return;
     btn.disabled = true; err.textContent = '';
     try {
-      await cast(key, ta.value, parent);
+      await cast(key, ta.value, parent, quote);
       ta.value = '';
       err.innerHTML = `<span class="muted">Sent. Your node relayed it to the network; it appears once a validator includes it, usually within seconds.</span>`;
       done?.();
@@ -254,7 +289,7 @@ async function viewFeed() {
     const app = Number(el.dataset.app || 0);
     if (app) counts.set(app, (counts.get(app) || 0) + 1);
   }
-  const apply = () => list.querySelectorAll<HTMLElement>('.cast').forEach((el) => {
+  const apply = () => list.querySelectorAll<HTMLElement>(':scope > .cast').forEach((el) => {
     const hide = hiddenApps.has(Number(el.dataset.app || 0)) || (votersOnly && el.dataset.voted !== '1');
     el.style.display = hide ? 'none' : '';
   });

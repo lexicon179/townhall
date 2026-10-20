@@ -221,3 +221,11 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .ev-pruned .what { color: var(--warn); }
 .ev.fresh { background: color-mix(in srgb, var(--signal) 12%, transparent); }
 @media (max-width: 520px) { .live-stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* quoted casts */
+.quoted { display: block; cursor: pointer; border: 1px solid var(--hair); border-radius: var(--r-l); margin: 4px 0 8px; text-decoration: none; color: inherit; overflow: hidden; }
+.quoted:hover { border-color: color-mix(in srgb, var(--ink) 25%, transparent); }
+.quoted .cast { padding: 10px 12px; border: 0; font-size: 14px; }
+.quoted .cast .avatar, .quoted .cast img.avatar { width: 24px; height: 24px; }
+.quoted .embed-img { max-height: 220px; }
+.quoted.missing { padding: 10px 12px; font-size: 14px; color: var(--muted); }

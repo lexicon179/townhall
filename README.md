@@ -44,7 +44,8 @@ Measured on the demo node (Hetzner `cx43`, 1 TB volume, Snapchain 0.14.3, Octobe
 ## What the client does
 
 - Reads everything from your node: the feed of people you follow, profiles, threads, replies and mentions.
-- Posts with its own app key: casts, replies, likes, recasts, follows, deletes.
+- Posts with its own app key: casts, replies, quotes, likes, recasts, follows, deletes.
+- Share: every cast has a link on your own client that opens for anyone, signed in or not (the share sheet on phones).
 - Adds that key from your recovery phrase as a gasless `KEY_ADD` (custody-signed EIP-712, no transaction, no ETH). The phrase is used only in the browser and cleared right after. The key can revoke itself from Settings.
 - Shows which app signed each cast and lets you include or exclude casts by app.
 - **Voters only:** filters the feed to people who hold the Farcaster VOTE NFT on Base.

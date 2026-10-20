@@ -42,6 +42,11 @@ export async function castsByFid(fid: number, pageSize = 5): Promise<CastMsg[]> 
   return onlyCasts(r.messages).slice(0, pageSize);
 }
 
+export async function castById(fid: number, hash: string): Promise<CastMsg | null> {
+  const r = await fetch(`${HUB}/v1/castById?fid=${fid}&hash=${hash}`);
+  return r.ok ? r.json() : null;
+}
+
 export async function castsByParent(fid: number, hash: string): Promise<CastMsg[]> {
   const r = await get<{ messages: CastMsg[] }>('castsByParent', { fid, hash, pageSize: 50 });
   return onlyCasts(r.messages);

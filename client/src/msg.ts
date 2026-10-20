@@ -46,12 +46,16 @@ async function parseMentions(text: string) {
   return { text: out, mentions, mentionsPositions };
 }
 
-export async function cast(k: Stored, text: string, parent?: { fid: number; hash: string }) {
+/** A quote is an ordinary cast with the quoted cast's id in its embeds. */
+export async function cast(k: Stored, text: string, parent?: { fid: number; hash: string }, quote?: { fid: number; hash: string }) {
   const parsed = await parseMentions(text);
   const url = text.match(/https?:\/\/\S+/)?.[0];
+  const embeds: any[] = [];
+  if (url) embeds.push({ url });
+  if (quote) embeds.push({ castId: { fid: quote.fid, hash: bytes(quote.hash) } });
   return submitRaw(await makeCastAdd({
     ...parsed,
-    embeds: url ? [{ url }] : [],
+    embeds,
     embedsDeprecated: [],
     type: 0,
     ...(parent ? { parentCastId: { fid: parent.fid, hash: bytes(parent.hash) } } : {}),
