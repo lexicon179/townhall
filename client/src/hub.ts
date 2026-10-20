@@ -173,15 +173,23 @@ export async function appNonce(fid: number, requestFid: number): Promise<number>
 }
 
 /** Count follows in one direction, 1,000 links per request (the node's page limit), up to `cap`. */
-export async function linkCount(dir: 'following' | 'followers', fid: number, cap = 10_000): Promise<{ n: number; more: boolean }> {
+/**
+ * Counts follows by paging through the node's link index. Large accounts take a while (the node
+ * reads every link), so the count is reported as it grows: a small first page for a quick number,
+ * then large pages. Stops at `cap` and reports "more".
+ */
+export async function linkCount(dir: 'following' | 'followers', fid: number, onProgress?: (c: { n: number; more: boolean }) => void, cap = 10_000): Promise<{ n: number; more: boolean }> {
   const path = dir === 'following' ? 'linksByFid' : 'linksByTargetFid';
   const id: Record<string, number> = dir === 'following' ? { fid } : { target_fid: fid };
   let n = 0;
   let pageToken: string | undefined;
+  let pageSize = 100;
   do {
-    const r = await get<any>(path, { ...id, link_type: 'follow', pageSize: 1000, ...(pageToken ? { pageToken } : {}) });
+    const r = await get<any>(path, { ...id, link_type: 'follow', pageSize, ...(pageToken ? { pageToken } : {}) });
     n += (r.messages ?? []).length;
     pageToken = r.nextPageToken || undefined;
+    if (pageToken) onProgress?.({ n, more: true });
+    pageSize = 1000;
   } while (pageToken && n < cap);
   return { n, more: !!pageToken };
 }

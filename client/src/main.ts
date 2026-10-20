@@ -355,8 +355,10 @@ async function viewProfile(fid: number) {
   $view.append(head);
   // counted straight from your node's link store
   const fmt = (c: { n: number; more: boolean }) => (c.n >= 1000 ? `${(c.n / 1000).toFixed(c.n >= 10_000 ? 0 : 1).replace(/\.0$/, '')}K` : String(c.n)) + (c.more ? '+' : '');
-  linkCount('following', fid).then((c) => (head.querySelector('[data-s=following]')!.innerHTML = `<b>${fmt(c)}</b> following`)).catch(() => {});
-  linkCount('followers', fid).then((c) => (head.querySelector('[data-s=followers]')!.innerHTML = `<b>${fmt(c)}</b> follower${c.n === 1 && !c.more ? "" : "s"}`)).catch(() => {});
+  const showFollowing = (c: { n: number; more: boolean }) => (head.querySelector('[data-s=following]')!.innerHTML = `<b>${fmt(c)}</b> following`);
+  const showFollowers = (c: { n: number; more: boolean }) => (head.querySelector('[data-s=followers]')!.innerHTML = `<b>${fmt(c)}</b> follower${c.n === 1 && !c.more ? '' : 's'}`);
+  linkCount('following', fid, showFollowing).then(showFollowing).catch(() => {});
+  linkCount('followers', fid, showFollowers).then(showFollowers).catch(() => {});
   if (key && fid !== key.fid) isFollowing(fid, key.fid).then((y) => { if (y) head.querySelector<HTMLElement>('.mutual')!.hidden = false; });
   if (key && fid !== key.fid) {
     let on = await isFollowing(key.fid, fid);
