@@ -86,7 +86,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 .btns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;justify-content:flex-start}
 .btns a{min-width:0;padding:12px 22px;border-radius:6px;font-size:15px;font-weight:500;text-decoration:none}
 .btns .p{background:var(--accent);color:var(--on-accent)}.btns .s{background:none;color:var(--fg);border:1px solid var(--line)}
-.qs{max-width:860px;margin:0 auto;padding:24px 24px 8px}
+.qs{max-width:1120px;margin:0 auto;padding:24px 24px 8px}
 .stepper{list-style:none;padding:0;margin:0;display:grid;gap:14px}
 .stepper li{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--card)}
 .stepper .sh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -131,8 +131,25 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 .nodecard b{display:block;font-family:"Fira Mono",ui-monospace,monospace;font-size:19px;font-weight:400}
 .nodecard small{font-size:13px;color:var(--muted)}
 @media (max-width:600px){.nodecard .grid div{padding:12px 12px}.nodecard b{font-size:14.5px}.nodecard small{font-size:12px}}
+.hero{max-width:1120px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:48px;align-items:start}
+.hero-txt{min-width:0}
+.hero-garg{position:relative;width:400px;height:400px;margin-top:4px}
+.hero-garg svg{width:100%;height:100%;display:block;filter:drop-shadow(0 0 60px rgba(198,255,61,.18))}
+.g-eyes,.g-pupils{transform-box:fill-box;transform-origin:center;transition:transform .35s ease}
+.hero-garg[data-mood=awake] .g-eyes{animation:gblink 6.5s infinite}
+.hero-garg[data-mood=syncing] .g-eyes{transform:scaleY(.55)}
+.hero-garg[data-mood=asleep] .g-eyes{transform:scaleY(.12)}
+.hero-garg[data-mood=asleep] .g-pupils{opacity:0}
+.gz{position:absolute;right:30px;top:20px;font-family:"Fira Mono",monospace;font-weight:600;color:var(--accent);opacity:0;font-size:44px}
+.gz+.gz{right:0;top:-30px;font-size:62px}
+.hero-garg[data-mood=asleep] .gz{animation:gz 2.6s ease-out infinite}
+.hero-garg[data-mood=asleep] .gz+.gz{animation-delay:1.1s}
+@keyframes gblink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+@keyframes gz{0%{opacity:0;transform:translate(0,10px)}30%{opacity:1}100%{opacity:0;transform:translate(16px,-26px)}}
+@media (max-width:900px){.hero{grid-template-columns:1fr;gap:8px}.hero-garg{order:-1;width:200px;height:200px;margin:0 0 4px -12px}.gz{font-size:28px;right:20px;top:10px}.gz+.gz{font-size:38px;right:0;top:-14px}}
+@media (prefers-reduced-motion:reduce){.hero-garg *{animation:none!important;transition:none!important}}
 .qsh{margin:0 0 14px}
-.proof{max-width:860px;margin:0 auto;padding:8px 24px 24px}
+.proof{max-width:1120px;margin:0 auto;padding:8px 24px 24px}
 .proof h2{margin:0 0 6px}
 .shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 0}
 .shots figure{margin:0}
@@ -160,6 +177,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 </nav>
 
 <header class="hero">
+<div class="hero-txt">
   <h1>没有任何应用能<span class="hl">封禁</span>你。</h1>
   <p class="lead2">你自己的 Farcaster 客户端和 Snapchain 节点，三条命令搞定。</p>
   <p class="sub">一切都运行在你自己控制的服务器上，不依赖任何人的 API 密钥。今晚敲十分钟命令，明天下午就同步完成。</p>
@@ -167,6 +185,8 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <p class="try-note">只读，直接来自我们的节点，无需签名。<a href="#quickstart">或者用三条命令运行你自己的 ↓</a></p>
   <div class="nodecard" id="nodecard" aria-live="polite"><div class="hd"><i></i>演示节点<span data-k="st">连接中…</span></div><div class="grid"><div><b data-k="h">—</b><small>区块</small></div><div><b data-k="m">—</b><small>已存储消息</small></div><div><b data-k="a">—</b><small>账号</small></div></div></div>
   <p class="small zh-note">本页为机器辅助翻译，英文版为准。欢迎在 <a href="https://github.com/townhall-fc/townhall">GitHub</a> 提交修正。</p>
+</div>
+<div class="hero-garg" id="garg" data-mood="awake" aria-hidden="true"><svg viewBox="0 0 100 100"><g transform="translate(10 8) scale(.8)"><path d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z" fill="#c6ff3d"/><g class="g-eyes"><path d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z" fill="#0b0b0c"/><path class="g-pupils" d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z" fill="#c6ff3d"/></g><rect x="28" y="70" width="44" height="12" rx="3" fill="#0b0b0c"/><path d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z" fill="#c6ff3d"/></g></svg><span class="gz">z</span><span class="gz">z</span></div>
 </header>
 
 <section id="proof" class="proof">
@@ -489,6 +509,14 @@ function tick(){fetch(APP+'/v1/info',{cache:'no-store'}).then(function(r){return
   set('m',f(i.dbStats.numMessages));set('a',f(i.dbStats.numFidRegistrations));
   set('st',behind<10?'已同步':'落后 '+behind+' 个区块');c.classList.toggle('ok',behind<10)}).catch(function(){})}
 tick();setInterval(function(){if(!document.hidden)tick()},4000)})();
+</script>
+<script>
+(function(){var g=document.getElementById('garg');if(!g)return;var p=g.querySelector('.g-pupils');
+// the eyes follow the pointer a little
+addEventListener('pointermove',function(e){if(g.dataset.mood!=='awake')return;var r=g.getBoundingClientRect();var dx=Math.max(-1,Math.min(1,(e.clientX-(r.left+r.width/2))/600));p.style.transform='translateX('+(dx*3).toFixed(2)+'px)'},{passive:true});
+// and its mood is the demo node's state, read by the card below
+new MutationObserver(function(){var c=document.getElementById('nodecard');g.dataset.mood=c.classList.contains('ok')?'awake':(c.querySelector('[data-k=h]').textContent==='—'?'asleep':'syncing')}).observe(document.getElementById('nodecard'),{attributes:true,subtree:true,characterData:true,childList:true});
+})();
 </script>
 </body>
 </html>
