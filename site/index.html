@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0d0d0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23c6ff3d%22/%3E%3Cg%20transform%3D%22translate%2810%208%29%20scale%28.8%29%22%3E%3Cpath%20d%3D%22M16%2032%20L22%206%20L38%2024%20H62%20L78%206%20L84%2032%20V76%20Q84%2092%2068%2092%20H32%20Q16%2092%2016%2076%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Cpath%20d%3D%22M20%2042%20L50%2050%20L80%2042%20V54%20L50%2062%20L20%2054%20Z%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M30%2050%20L42%2053%20V56%20L30%2053%20Z%20M70%2050%20L58%2053%20V56%20L70%2053%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Crect%20x%3D%2228%22%20y%3D%2270%22%20width%3D%2244%22%20height%3D%2212%22%20rx%3D%223%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M36%2070%20L40%2077%20L44%2070%20Z%20M56%2070%20L60%2077%20L64%2070%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3C/g%3E%3C/svg%3E">
 <title>townhall · your own Farcaster client and node in three commands</title>
@@ -11,10 +11,10 @@
 <style>
 @font-face{font-family:Geist;src:url(fonts/geist.woff2) format("woff2");font-weight:100 900;font-display:swap}
 @font-face{font-family:"Geist Mono";src:url(fonts/geist-mono.woff2) format("woff2");font-weight:100 900;font-display:swap}
-/* Obsidian and lime. Dark is the brand's face; light follows the reader's system. */
+/* Obsidian and lime. The site is always dark: it is the face of the brand. */
 :root{--bg:#0d0d0f;--fg:#f2f2ee;--muted:#8a8a86;--line:#242428;--card:#141416;--code:#17171a;--accent:#c6ff3d;--on-accent:#0d0d0f;--warn:#f0b24a;
   font-family:Geist,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:dark}
-@media (prefers-color-scheme:light){:root{--bg:#f2f2ee;--fg:#0d0d0f;--muted:#6e6e6a;--line:#dcdcd6;--card:#fafaf7;--code:#e9e9e3;--accent:#4f7a00;--on-accent:#f2f2ee;--warn:#9a5b00;color-scheme:light}}
+
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font-size:17px;line-height:1.6}
 main{max-width:760px;margin:0 auto;padding:24px 18px 120px}
