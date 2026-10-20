@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Navigation people know from Farcaster apps: bottom tabs on phones (Home, Search, Live, Replies, you), a left rail on wide screens. Settings moved to your profile.
+- Connect with a recovery phrase is one button with plain steps (finding your account, giving this client its key, done) instead of Check / Add app key and raw addresses.
+- An empty feed suggests a few accounts to follow, one tap each.
+- Feed: a link already in the text is not repeated under it; the guest Sign in button stays on one line.
 - Guide: try it first. Type a username and open that feed read-only on the demo node (`#/read/<username>`); a live card shows the demo node's block, messages and accounts.
 - The gargoyle shows your node's state: awake and blinking when in sync, squinting and looking around while it catches up, asleep while it downloads the network or can't be reached.
 - Fix: leaving Live (or any page) while it was still loading could paint "Cannot set properties of null" over the next page.

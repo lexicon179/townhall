@@ -106,11 +106,30 @@ async function nodeStatus() {
   }
 }
 
+const TAB = {
+  home: '<svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8.5H14v-5h-4v5H4z"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20"/></svg>',
+  live: '<svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg>',
+  replies: '<svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>',
+  me: '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.6"/><path d="M5 20c1-3.6 3.6-5.4 7-5.4s6 1.8 7 5.4"/></svg>',
+};
+/** Bottom tabs on phones, a left rail on wide screens: the layout people know from Farcaster apps. */
 async function renderMe() {
   const f = myFid();
-  if (!f) { $me.innerHTML = cfg.signin || cfg.defaultFid ? '<a href="#/live">Live</a><a href="#/search">Search</a><a class="btn primary sm" href="#/setup">Sign in</a>' : ''; return; }
-  const p = await profile(f);
-  $me.innerHTML = `<a href="#/live">Live</a><a href="#/search" aria-label="Search">Search</a><a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
+  const tab = (href: string, icon: keyof typeof TAB, label: string) => `<a href="${href}" data-tab="${href}">${TAB[icon]}<span>${label}</span></a>`;
+  const items = [tab('#/', 'home', 'Home'), tab('#/search', 'search', 'Search'), tab('#/live', 'live', 'Live')];
+  if (key) items.push(tab('#/n', 'replies', 'Replies'));
+  if (f) {
+    const p = await profile(f);
+    items.push(`<a href="#/u/${f}" data-tab="#/u/${f}" class="me-tab">${p.pfp ? `<img src="${esc(p.pfp)}" alt="">` : TAB.me}<span>${esc(p.username ? '@' + p.username : 'Me')}</span></a>`);
+  }
+  if (!key) items.push(`<a href="#/setup" data-tab="#/setup" class="signin-tab">${TAB.me}<span>Sign in</span></a>`);
+  $me.innerHTML = items.join('');
+  markTab();
+}
+function markTab() {
+  const h = location.hash || '#/';
+  $me.querySelectorAll<HTMLElement>('a').forEach((a) => a.classList.toggle('on', a.dataset.tab === h || (a.dataset.tab === '#/' && (h === '#' || h === ''))));
 }
 
 // ---------- cast rendering ----------
@@ -304,6 +323,31 @@ function composer(parent?: { fid: number; hash: string }, done?: () => void, quo
 
 // ---------- views ----------
 
+/** An empty feed is a dead end. Offer a few well-known accounts to follow, one tap each. */
+const STARTERS = ['dwr', 'v', 'balajis.eth', 'vitalik.eth', 'horsefacts.eth', 'jessepollak', 'linda', 'ted'];
+async function starter() {
+  const box = h(`<section class="starter"><h2>Your feed is empty</h2><p class="muted">Follow a few people to fill it. You can unfollow any time.</p><div class="people"></div></section>`);
+  const people = box.querySelector('.people')!;
+  for (const name of STARTERS) {
+    const fid = await fidByName(name).catch(() => null);
+    if (!fid) continue;
+    const p = await profile(fid);
+    const row = h(`<div class="person"><a href="#/u/${fid}">${avatar(p)}</a><div><a class="name" href="#/u/${fid}">${esc(p.display || p.username || 'fid ' + fid)}</a><span class="handle">@${esc(p.username || String(fid))}</span></div><button class="btn primary sm">Follow</button></div>`);
+    const b = row.querySelector('button')!;
+    if (!key) { b.textContent = 'View'; b.classList.remove('primary'); b.onclick = () => (location.hash = `#/u/${fid}`); }
+    else b.onclick = async () => {
+      b.disabled = true;
+      try { await (await M()).follow(key!, fid, true); b.textContent = 'Following'; b.classList.remove('primary'); }
+      catch (e) { toast((e as Error).message); b.disabled = false; }
+    };
+    people.append(row);
+  }
+  const done = h('<p><a class="btn" href="#/">Show my feed</a></p>');
+  done.querySelector('a')!.addEventListener('click', (e) => { e.preventDefault(); route(); });
+  box.append(done);
+  return box;
+}
+
 async function viewFeed() {
   const fid = myFid();
   const guest = !fid && !!cfg.defaultFid;
@@ -319,7 +363,8 @@ async function viewFeed() {
   const fids = guest ? await following(cfg.defaultFid!, 150) : [fid, ...(await following(fid, 150))];
   const batches = await pool(fids, 12, (f) => castsByFid(f, 4).catch(() => []));
   const casts = batches.flat().sort((a, b) => b.data.timestamp - a.data.timestamp).slice(0, 120);
-  list.innerHTML = casts.length ? '' : '<div class="center">Nothing yet. Follow some people.</div>';
+  list.innerHTML = '';
+  if (!casts.length) { list.append(await starter()); return; }
 
   const counts = new Map<number, number>();
   const els = await pool(casts, 8, (c) => castEl(c));
@@ -369,6 +414,7 @@ async function viewProfile(fid: number) {
   const showFollowers = (c: { n: number; more: boolean }) => (head.querySelector('[data-s=followers]')!.innerHTML = `<b>${fmt(c)}</b> follower${c.n === 1 && !c.more ? '' : 's'}`);
   linkCount('following', fid, showFollowing).then(showFollowing).catch(() => {});
   linkCount('followers', fid, showFollowers).then(showFollowers).catch(() => {});
+  if (fid === myFid()) head.querySelector('.stats')!.insertAdjacentHTML('afterend', `<p><a class="btn sm" href="#/settings">Settings</a>${key ? '' : ' <span class="muted">reading only</span>'}</p>`);
   if (key && fid !== key.fid) isFollowing(fid, key.fid).then((y) => { if (y) head.querySelector<HTMLElement>('.mutual')!.hidden = false; });
   if (key && fid !== key.fid) {
     let on = await isFollowing(key.fid, fid);
@@ -506,40 +552,47 @@ function viewSetup() {
   const w = h(`
     <section class="option">
       <h2>Your keys</h2>
-      <p class="muted">This client posts with its own app key. Your recovery phrase signs one KEY_ADD message that adds the key to your account, then it is cleared from the page. No transaction, no gas.</p>
-      <p class="warnbox">Treat a recovery phrase like <code>rm -rf</code>: test with a test account, and only paste it into software you run yourself or from developers you trust. Prefer signing in through an app that holds your account when you can.</p>
-      <textarea placeholder="Recovery phrase, 12 or 24 words" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-      <div class="row"><button class="btn" data-a="check">Check phrase</button><button class="btn primary" data-a="add" disabled>Add app key</button></div>
-      <div class="kv"></div>
-      <div class="status muted"></div>
+      <p class="muted">Paste the recovery phrase of the account you want to use. It signs one message that gives this client its own key, and then it's erased from the page. No transaction, no gas.</p>
+      <p class="warnbox">Use a test account. A recovery phrase controls the whole account: only paste it into software you run yourself or from people you trust.</p>
+      <textarea placeholder="12 or 24 words" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Recovery phrase"></textarea>
+      <div class="row"><button class="btn primary" data-a="add">Connect</button></div>
+      <ol class="progress" hidden></ol>
       <div class="err"></div>
+      <details class="adv-info"><summary>What happens when I press Connect?</summary>
+        <p class="muted">Your phrase finds your account (it never leaves this browser). The page makes a new key for this client, your account signs a KEY_ADD that allows it to post, and your node adds it. Then the phrase is cleared and only the new key is kept here. You can revoke it any time in Settings.</p>
+      </details>
     </section>`);
-  const ta = w.querySelector('textarea')!, kv = w.querySelector('.kv')!, err = w.querySelector('.err')!, status = w.querySelector('.status')!;
+  const ta = w.querySelector('textarea')!, err = w.querySelector('.err')!, prog = w.querySelector<HTMLOListElement>('.progress')!;
   const addBtn = w.querySelector<HTMLButtonElement>('[data-a=add]')!;
-  w.querySelector('[data-a=check]')!.addEventListener('click', async () => {
-    err.textContent = ''; kv.innerHTML = ''; addBtn.disabled = true;
-    try {
-      const r = await (await K()).inspectSeed(ta.value);
-      const p = r.fid ? await profile(r.fid) : null;
-      kv.innerHTML = `<b>Custody</b><span>${r.custody}</span><b>FID</b><span>${r.fid || 'none'}${p?.username ? ` (@${esc(p.username)})` : ''}</span>`;
-      if (!r.fid) err.textContent = 'No Farcaster account belongs to this phrase.';
-      else addBtn.disabled = false;
-    } catch (e) {
-      err.textContent = (e as Error).message.includes('mnemonic') ? 'That does not look like a valid recovery phrase.' : (e as Error).message;
-    }
-  });
+  const stepTo = (text: string, state: 'run' | 'done' = 'run') => {
+    prog.hidden = false;
+    const last = prog.lastElementChild as HTMLElement | null;
+    if (last && last.dataset.s === 'run') last.dataset.s = 'done';
+    if (state === 'done' && last && last.textContent === text) { last.dataset.s = 'done'; return; }
+    prog.insertAdjacentHTML('beforeend', `<li data-s="${state}">${esc(text)}</li>`);
+  };
   addBtn.addEventListener('click', async () => {
-    addBtn.disabled = true; err.textContent = '';
+    err.textContent = ''; prog.innerHTML = ''; addBtn.disabled = true;
     try {
-      const { stored } = await (await K()).addAppKey(ta.value, (s) => (status.textContent = s + '…'));
+      stepTo('Finding your account');
+      const k = await K();
+      const r = await k.inspectSeed(ta.value);
+      if (!r.fid) throw new Error('No Farcaster account belongs to this phrase. Check the words, or use the phrase of the account itself (not of another wallet).');
+      const p = await profile(r.fid);
+      prog.lastElementChild!.textContent = `Found @${p.username || 'fid ' + r.fid}`;
+      stepTo('Giving this client its own key');
+      const { stored } = await k.addAppKey(ta.value, () => {});
       ta.value = '';
+      stepTo('Done. Opening your feed', 'done');
       key = stored;
       localStorage.setItem('readFid', String(stored.fid));
       renderMe();
       location.hash = '#/';
       route();
     } catch (e) {
-      err.textContent = (e as Error).message.split('\n')[0];
+      const m = (e as Error).message.split('\n')[0];
+      err.textContent = /mnemonic/i.test(m) ? 'Those words are not a valid recovery phrase. It should be 12 or 24 words separated by spaces.' : m;
+      prog.querySelectorAll('[data-s=run]').forEach((li) => ((li as HTMLElement).dataset.s = 'fail'));
       addBtn.disabled = false;
     }
   });
@@ -684,7 +737,7 @@ document.getElementById('theme')!.addEventListener('click', () => {
 const shared = location.pathname.match(/^\/c\/(\d+)\/(0x[0-9a-fA-F]+)\/?$/);
 if (shared) history.replaceState(null, '', `/#/c/${shared[1]}/${shared[2]}`);
 
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => { markTab(); route(); });
 nodeStatus();
 setInterval(nodeStatus, 15000);
 loadConfig().then((c) => { cfg = c; renderMe(); route(); });
