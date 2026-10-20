@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="theme-color" content="#0d0d0f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20100%20100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23c6ff3d%22/%3E%3Cg%20transform%3D%22translate%2810%208%29%20scale%28.8%29%22%3E%3Cpath%20d%3D%22M16%2032%20L22%206%20L38%2024%20H62%20L78%206%20L84%2032%20V76%20Q84%2092%2068%2092%20H32%20Q16%2092%2016%2076%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Cpath%20d%3D%22M20%2042%20L50%2050%20L80%2042%20V54%20L50%2062%20L20%2054%20Z%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M30%2050%20L42%2053%20V56%20L30%2053%20Z%20M70%2050%20L58%2053%20V56%20L70%2053%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3Crect%20x%3D%2228%22%20y%3D%2270%22%20width%3D%2244%22%20height%3D%2212%22%20rx%3D%223%22%20fill%3D%22%23c6ff3d%22/%3E%3Cpath%20d%3D%22M36%2070%20L40%2077%20L44%2070%20Z%20M56%2070%20L60%2077%20L64%2070%20Z%22%20fill%3D%22%230d0d0f%22/%3E%3C/g%3E%3C/svg%3E">
+<title>townhall · 三条命令，拥有你自己的 Farcaster 客户端和节点</title>
+<meta property="og:title" content="townhall: your own Farcaster client and node, in three commands">
+<meta property="og:description" content="Run a Snapchain read node and your own Farcaster client in three commands. No API keys. Gasless app keys. A tutorial that explains every piece.">
+<meta property="og:image" content="https://townhallfc.xyz/img/og.png">
+<meta property="og:url" content="https://townhallfc.xyz/zh/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://townhallfc.xyz/img/og.png">
+<link rel="alternate" hreflang="en" href="https://townhallfc.xyz/">
+<link rel="alternate" hreflang="zh-CN" href="https://townhallfc.xyz/zh/">
+<meta name="description" content="三条命令运行 Snapchain 只读节点和你自己的 Farcaster 客户端。无需任何 API 密钥。边做边讲清楚每个环节的教程。">
+<style>
+@font-face{font-family:"Fira Sans";src:url(../fonts/fira-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Fira Sans";src:url(../fonts/fira-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Fira Sans";src:url(../fonts/fira-600.woff2) format("woff2");font-weight:600 700;font-display:swap}
+@font-face{font-family:"Fira Mono";src:url(../fonts/fira-mono.woff2) format("woff2");font-display:swap}
+/* Obsidian and lime. Dark by default (the face of the brand); the toggle switches to light and is remembered. */
+:root{--bg:#0d0d0f;--fg:#f2f2ee;--muted:#8a8a86;--line:#242428;--card:#141416;--code:#17171a;--accent:#c6ff3d;--on-accent:#0d0d0f;--warn:#f0b24a;
+  font-family:"Fira Sans","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color-scheme:dark}
+:root[data-theme=light]{--bg:#f2f2ee;--fg:#0d0d0f;--muted:#6e6e6a;--line:#dcdcd6;--card:#fafaf7;--code:#e9e9e3;--accent:#4f7a00;--on-accent:#f2f2ee;--warn:#9a5b00;color-scheme:light}
+.theme{font:inherit;font-size:13px;border:1px solid var(--line);background:none;color:var(--fg);border-radius:6px;padding:4px 10px;cursor:pointer}
+
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-size:17px;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:24px 18px 120px}
+nav.top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:22px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);padding:14px 28px;font-size:14px;font-weight:500}
+nav.top .wm{display:inline-flex;align-items:center;gap:12px;color:var(--fg);text-decoration:none;letter-spacing:.38em;font-size:14px}
+nav.top .wm svg{width:22px;height:22px;border-radius:5px}
+nav.top .links{display:flex;gap:22px;margin:0 auto;overflow-x:auto;white-space:nowrap}
+nav.top .lang{color:var(--fg);text-decoration:none;font-size:14px;opacity:.85}nav.top .lang:hover{opacity:1}
+nav.top .links a{color:var(--fg);opacity:.82;text-decoration:none}nav.top .links a:hover{opacity:1}
+@media (max-width:720px){nav.top .links{display:none}nav.top .lang{margin-left:auto}}
+h1{font-size:clamp(34px,6vw,44px);line-height:1.15;font-weight:500;letter-spacing:0;margin:0}
+h2{font-size:26px;font-weight:500;letter-spacing:0;margin:64px 0 12px;padding-top:8px}
+h3{font-size:19px;font-weight:600;margin:30px 0 8px}
+p,li{max-width:68ch}.lead{font-size:20px;color:var(--muted)}
+a{color:var(--accent)}
+code{font-family:"Fira Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--code);padding:.1em .35em;border-radius:5px}
+pre{position:relative;background:var(--code);border:1px solid var(--line);border-radius:12px;padding:14px 72px 14px 16px;overflow-x:auto;font-size:14px;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+.copy{position:absolute;top:8px;right:8px;font:inherit;font-size:12px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:3px 10px;cursor:pointer}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps>li{counter-increment:s;position:relative;padding-left:44px;margin:18px 0}
+.steps>li::before{content:counter(s,decimal);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:14px}
+.steps.zero>li::before{content:counter(s,decimal);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:16px 0}
+.note{border-left:3px solid var(--accent);padding:6px 14px;margin:16px 0;color:var(--fg)}
+.warn{border-left:3px solid var(--warn);padding:6px 14px;margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:12px 0}
+th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px 6px;vertical-align:top}th{color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}.diagram{width:100%;min-width:600px;height:auto;margin:10px 0}
+.diagram text{fill:var(--fg);font-size:13px;font-family:inherit}
+.diagram .muted{fill:var(--muted);font-size:11.5px}
+.diagram rect{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+.diagram rect.hl{stroke:var(--accent);stroke-width:2}
+.diagram path{stroke:var(--muted);stroke-width:1.5;fill:none;marker-end:url(#arr)}
+.diagram path.w{stroke:var(--accent)}
+dl dt{font-weight:700;margin-top:14px}dl dd{margin:2px 0 0 0;color:var(--fg)}
+.small{font-size:14px;color:var(--muted)}
+.hero{text-align:center;padding:64px 0 24px}
+.hero .tag{font-size:22px;font-weight:500;margin:12px 0 0;max-width:none}
+.hero .sub{font-size:17px;color:var(--muted);margin:10px auto 0;max-width:none}
+.btns{display:flex;gap:14px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.btns a{min-width:220px;padding:11px 18px;border-radius:6px;font-size:14px;font-weight:500;text-decoration:none;box-sizing:border-box}
+.btns .p{background:var(--accent);color:var(--on-accent)}.btns .s{background:var(--fg);color:var(--bg)}
+.shotwrap{text-align:center;margin:28px 0 0}
+.shotwrap img{width:min(360px,80%);height:auto;border-radius:36px;border:1px solid var(--line);box-shadow:0 60px 120px -40px color-mix(in srgb,var(--accent) 22%,transparent)}
+.shotwrap figcaption{font-size:13px;color:var(--muted);margin-top:10px}
+main{max-width:860px}
+p,li{max-width:66ch}
+footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+
+/* layout v2 */
+.hero{text-align:left;max-width:860px;margin:0 auto;padding:72px 24px 24px}
+.hero h1{font-size:clamp(38px,6.4vw,64px);line-height:1.04;font-weight:500;letter-spacing:-.02em;margin:0}
+.hero .lead2{font-size:clamp(20px,2.6vw,26px);margin:16px 0 0;max-width:30ch;line-height:1.3}
+.hero .sub{font-size:17px;color:var(--muted);margin:14px 0 0;max-width:56ch}
+.btns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;justify-content:flex-start}
+.btns a{min-width:0;padding:12px 22px;border-radius:6px;font-size:15px;font-weight:500;text-decoration:none}
+.btns .p{background:var(--accent);color:var(--on-accent)}.btns .s{background:none;color:var(--fg);border:1px solid var(--line)}
+.qs{max-width:860px;margin:0 auto;padding:24px 24px 8px}
+.stepper{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.stepper li{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--card)}
+.stepper .sh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.stepper .n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+.stepper h3{margin:0;font-size:19px;font-weight:500}
+.stepper .where,.stepper .dur{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-family:"Fira Mono",ui-monospace,monospace}
+.stepper .dur{margin-left:auto}
+.stepper pre{margin:14px 0 10px;white-space:pre-wrap;word-break:break-all}
+.stepper p{margin:0;color:var(--muted);font-size:15px}
+.timeline{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;margin:22px 0 10px;font-size:14px}
+.timeline b{display:block;font-weight:600}.timeline span{color:var(--muted);font-size:13px}
+.timeline .bar{display:flex;gap:3px;height:30px}
+.timeline .bar span{display:flex;align-items:center;justify-content:center;border-radius:6px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--fg);font-size:12.5px;white-space:nowrap;overflow:hidden}
+.timeline .bar span+span{background:color-mix(in srgb,var(--accent) 30%,transparent)}
+.layout{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px;padding:0 24px}
+.layout main{max-width:740px;margin:0;padding:24px 0 120px}
+.toc{position:sticky;top:70px;align-self:start;display:flex;flex-direction:column;gap:2px;padding-top:56px;font-size:14px}
+.toc b{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.toc a{color:var(--muted);text-decoration:none;padding:4px 0}.toc a:hover{color:var(--fg)}
+@media (max-width:900px){.layout{grid-template-columns:1fr;gap:0}.toc{position:static;padding-top:24px;flex-direction:row;flex-wrap:wrap;gap:6px 14px}.toc b{width:100%}}
+@media (max-width:600px){.timeline{grid-template-columns:1fr}.stepper .dur{margin-left:0}.hero{padding-top:44px}}
+footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
+:lang(zh) .hero h1{font-size:clamp(28px,7.4vw,64px);letter-spacing:0}
+:lang(zh) .stepper .where,:lang(zh) .stepper .dur{font-family:inherit;letter-spacing:0}
+</style>
+</head>
+<body>
+<nav class="top">
+  <a class="wm" href="#"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#c6ff3d"/><g transform="translate(10 8) scale(.8)"><path d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z" fill="#0d0d0f"/><path d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z" fill="#c6ff3d"/><path d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z" fill="#0d0d0f"/><rect x="28" y="70" width="44" height="12" rx="3" fill="#c6ff3d"/><path d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z" fill="#0d0d0f"/></g></svg>TOWNHALL</a>
+  <span class="links"><a href="#quickstart">快速开始</a><a href="#guide">指南</a><a href="https://app.townhallfc.xyz">在线演示</a><a href="https://github.com/townhall-fc/townhall">GitHub</a></span>
+  <a class="lang" href="../" hreflang="en" lang="en">EN</a>
+  <button class="theme" type="button" aria-label="切换浅色或深色主题"></button>
+</nav>
+
+<header class="hero">
+  <h1>没有任何应用能封禁你。</h1>
+  <p class="lead2">你自己的 Farcaster 客户端和 Snapchain 节点，三条命令搞定。</p>
+  <p class="sub">一切都运行在你自己控制的服务器上，不依赖任何人的 API 密钥。今晚敲十分钟命令，明天下午就同步完成。</p>
+  <div class="btns"><a class="p" href="#quickstart">开始</a><a class="s" href="https://app.townhallfc.xyz">查看在线演示</a></div>
+  <p class="small zh-note">本页为机器辅助翻译，英文版为准。欢迎在 <a href="https://github.com/townhall-fc/townhall">GitHub</a> 提交修正。</p>
+</header>
+
+<section id="quickstart" class="qs">
+  <ol class="stepper">
+    <li>
+      <div class="sh"><span class="n">0</span><h3>准备服务器</h3><span class="where">在你的电脑上</span><span class="dur">约 3 分钟</span></div>
+      <pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+      <p>在 Hetzner 上创建一台带 1 TB 磁盘的服务器，并打印它的 IP。你需要一个 <a href="#before">Hetzner API 令牌</a>。</p>
+    </li>
+    <li>
+      <div class="sh"><span class="n">1</span><h3>启动节点</h3><span class="where">在服务器上</span><span class="dur">约 2 分钟，之后通宵同步</span></div>
+      <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
+      <p>运行 Snapchain 官方的只读节点（read node）。它会下载整个网络（约 445 GB），然后自行追上最新区块。</p>
+    </li>
+    <li>
+      <div class="sh"><span class="n">2</span><h3>打开你的客户端</h3><span class="where">在服务器上</span><span class="dur">约 3 分钟</span></div>
+      <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'</code></pre>
+      <p>从本仓库源码构建客户端，并通过 HTTPS 提供服务。打开它打印出的地址即可。</p>
+    </li>
+  </ol>
+  <div class="timeline" aria-label="演示节点的时间线">
+    <div><b>今晚</b><span>10 分钟命令</span></div>
+    <div class="bar"><span style="flex:11">快照 · 约 11 小时</span><span style="flex:10">追块 · 约 10 小时</span></div>
+    <div><b>明天</b><span>同步完成，从你的节点发帖</span></div>
+  </div>
+  <p class="small">数据来自 2026 年 10 月的<a href="https://app.townhallfc.xyz">演示节点</a>。已经有服务器（Ubuntu、4 vCPU、16 GB 内存、1 TB 磁盘）？跳过第 0 步。测试完了？<a href="#cost">一条命令删除全部资源。</a></p>
+</section>
+
+<div class="layout">
+<aside class="toc" id="guide">
+  <b>指南</b>
+  <a href="#what">你会得到什么</a><a href="#expect">实测数据</a><a href="#before">开始之前</a>
+  <a href="#step0">第 0 步 · 服务器</a><a href="#step1">第 1 步 · 节点</a><a href="#step2">第 2 步 · 客户端</a>
+  <a href="#use">使用客户端</a><a href="#concepts">核心概念</a><a href="#writes">一条 cast 的旅程</a>
+  <a href="#security">安全</a><a href="#broke">踩过的坑</a><a href="#trouble">故障排查</a>
+  <a href="#cost">费用与清理</a><a href="#testers">给测试者</a>
+</aside>
+<main>
+
+<h2 id="what">你会得到什么</h2>
+<div class="scroll"><svg class="diagram" viewBox="0 0 720 315" role="img" aria-label="Your browser talks only to your server. Your server runs the client and a Snapchain read node. The read node syncs blocks from the network and relays your messages to validators. FIDs live on Optimism; app keys are added with a signed message, no transaction.">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill:var(--muted);stroke:none"/></marker></defs>
+  <rect x="10" y="110" width="150" height="70" rx="12"/><text x="85" y="140" text-anchor="middle">Your browser</text><text x="85" y="160" text-anchor="middle" class="muted">signs with your app key</text>
+  <rect x="220" y="40" width="250" height="210" rx="14" class="hl"/><text x="345" y="66" text-anchor="middle" font-weight="700">Your server</text>
+  <rect x="240" y="84" width="210" height="60" rx="10"/><text x="345" y="108" text-anchor="middle">Client (Caddy, HTTPS)</text><text x="345" y="127" text-anchor="middle" class="muted">static app + /v1 proxy</text>
+  <rect x="240" y="164" width="210" height="66" rx="10"/><text x="345" y="190" text-anchor="middle">Snapchain read node</text><text x="345" y="209" text-anchor="middle" class="muted">full copy of Farcaster, :3381</text>
+  <rect x="540" y="60" width="170" height="70" rx="12"/><text x="625" y="90" text-anchor="middle">Snapchain network</text><text x="625" y="110" text-anchor="middle" class="muted">validators make blocks</text>
+  <rect x="540" y="190" width="170" height="70" rx="12"/><text x="625" y="220" text-anchor="middle">Optimism</text><text x="625" y="240" text-anchor="middle" class="muted">FIDs (read only)</text>
+  <path d="M160 135 L238 115"/><path d="M345 144 L345 162"/>
+  <path d="M452 180 L538 110" class="w"/><path d="M538 92 L452 168"/>
+  <path d="M85 180 C 85 290, 480 300, 538 236" class="w"/>
+  <text x="625" y="150" text-anchor="middle" class="muted">your node relays casts,</text><text x="625" y="166" text-anchor="middle" class="muted">syncs blocks back</text>
+  <text x="330" y="306" text-anchor="middle" class="muted">the client reads your FID; no transaction</text>
+</svg></div>
+<ul>
+  <li><b>一个只读节点。</b>Farcaster 上每一条 cast、每一个反应、关注和资料的完整、经过验证的副本，并与网络保持同步。任何人都可以运行。</li>
+  <li><b>一个客户端。</b>你关注的人的首页信息流、个人资料、讨论串、发帖、回复、点赞、转发、关注。它还会显示每条 cast 由哪个应用签名，并允许你按应用隐藏或显示 cast。</li>
+  <li><b>你自己的应用密钥。</b>客户端用一把属于你、由你亲自添加到账户上的密钥签名。只要你的节点在线，中间没有任何人能替你发帖、隐藏你的信息流或拦截你的写入。</li>
+</ul>
+
+<h2 id="expect">实测数据</h2>
+<p>来自演示节点：Hetzner <code>cx43</code>（8 vCPU、16 GB），位于法尔肯施泰因，1 TB 卷，2026 年 10 月，Snapchain 0.14.3。</p>
+<table>
+  <tr><th></th><th>实测</th></tr>
+  <tr><td>动手时间</td><td>约 10 分钟</td></tr>
+  <tr><td>下载并解压快照</td><td>约 11 小时。快照约 5,700 个分块，压缩后约 445 GB。</td></tr>
+  <tr><td>快照之后追块</td><td>约 10 小时。节点重放快照之后产生的区块，追赶速度比链的增长快约每分钟 290 个区块。</td></tr>
+  <tr><td>从 <code>node.sh</code> 到同步完成</td><td>不到 22 小时。晚上开始，第二天下午就能用。</td></tr>
+  <tr><td>磁盘</td><td>解压时峰值约 800 GB。同步后约 560 GB：来自 336 万个 FID 的 9.14 亿条消息。</td></tr>
+  <tr><td>添加应用密钥</td><td>一条 <code>KEY_ADD</code>，约 10 秒后生效。无需 gas。</td></tr>
+</table>
+
+<h2 id="before">开始之前</h2>
+<table>
+  <tr><th>你需要</th><th>原因</th><th>怎么做</th></tr>
+  <tr><td>一台 4 vCPU、16 GB 内存、1 TB 磁盘的服务器</td><td>Snapchain 文档写的是 2 TB。目前 1 TB 足够同步：演示节点峰值约 800 GB（见<a href="#expect">实测数据</a>）。如果要长期运行好几个月，用 2 TB，因为网络在持续增长。</td><td>第 0 步会在 Hetzner 上创建一台。注册账号、新建项目，然后在 <i>Security → API tokens → Generate</i> 生成一个 Read &amp; Write 令牌。</td></tr>
+  <tr><td>一个有存储空间的 Farcaster <b>测试</b>账号，以及它的助记词</td><td>仅发帖时需要。助记词只签署一条添加应用密钥的 <code>KEY_ADD</code> 消息，无需 gas。只读模式只需要用户名。</td><td>在 Farcaster 应用的设置里：Advanced → Recovery phrase。在你的节点上查看存储：<code>/v1/storageLimitsByFid?fid=…</code>。</td></tr>
+  <tr><td>一个带 <code>curl</code>、<code>jq</code>、<code>ssh</code> 的终端</td><td>用来运行这三条命令。</td><td>macOS：<code>brew install jq</code>。Ubuntu：<code>sudo apt install jq</code>。</td></tr>
+</table>
+<p>动手时间约 10 分钟。之后节点会自行同步，大约需要一天中的大部分时间。</p>
+
+<h2 id="step0">第 0 步 · 准备服务器</h2>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<p>它依次做这些事：</p>
+<ol>
+  <li>使用你的 SSH 密钥（<code>~/.ssh/id_ed25519.pub</code>，没有就创建）并上传到 Hetzner，只有你能登录。</li>
+  <li>在该机房选择至少 4 vCPU、16 GB 内存的最便宜机型。</li>
+  <li>创建防火墙，只开放 SSH（22）、客户端用的 HTTP/HTTPS（80、443），以及 Snapchain 节点之间通信用的 UDP 3382。</li>
+  <li>创建 Ubuntu 24.04 服务器并挂载一块数据卷：账户允许就用 2 TB，否则用允许的最大值。1 TB 就够（见<a href="#expect">实测数据</a>）。</li>
+  <li>等到能 SSH 登录后，打印接下来两条已填好 IP 的命令。</li>
+</ol>
+<p class="small">可选参数：<code>LOCATION=nbg1</code>、<code>SERVER_TYPE=…</code>、<code>VOLUME_GB=…</code>。服务器存在期间按时计费，见<a href="#cost">费用与清理</a>。</p>
+
+<h2 id="step1">第 1 步 · 运行 Snapchain 只读节点</h2>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
+<ol>
+  <li>安装 Docker。</li>
+  <li>找到剩余空间最大的磁盘（你的数据卷），把节点放在那里。</li>
+  <li>从最新的 <a href="https://github.com/farcasterxyz/snapchain/releases">Snapchain 发布版</a>下载<b>官方</b>的 <code>docker-compose.mainnet.yml</code> 和 <code>validators.toml</code>，不做修改。该文件本身就配置为只读节点（<code>read_node = true</code>）。</li>
+  <li>启动节点。它先下载网络快照，然后从对等节点重放最近的区块，直到追上。</li>
+  <li>启动一个小的<b>快照守护程序</b>。首次启动时，节点会把下载的每个快照文件一直保留到最后，这就是文档要求 2 TB 的原因。守护程序在节点用完每个文件后立即删除它，因此演示节点首次同步的峰值约 800 GB，而不是约 1.5 TB。同步完成后它会自行退出。</li>
+  <li>安装 <code>townhall-status</code>，一条命令显示每个分片落后多少。</li>
+</ol>
+<pre><code>$ ssh root@YOUR_IP townhall-status
+shard 0: height 48485756  blocks behind: 1
+shard 1: height 49161526  blocks behind: 0
+shard 2: height 48996914  blocks behind: 1
+In sync when every 'blocks behind' is in the single digits.</code></pre>
+<p>这是演示节点同步完成后的输出。追块期间，“blocks behind” 会不断减少；演示节点从几万降到个位数用了大约 10 小时。</p>
+<p>节点在 3381 端口提供 Snapchain 的 HTTP API。在服务器上试试：<code>curl -s localhost:3381/v1/castsByFid?fid=1 | jq '.messages[0].data.castAddBody.text'</code></p>
+
+<h2 id="step2">第 2 步 · 创建你的客户端</h2>
+<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'</code></pre>
+<ol>
+  <li>克隆本仓库，在一次性的 Node 容器里构建客户端。</li>
+  <li>启动 <a href="https://caddyserver.com">Caddy</a>，为 <code>YOUR-IP.sslip.io</code> 申请 HTTPS 证书（一个指向你 IP 的免费通配 DNS 名；设置 <code>DOMAIN=your.domain</code> 可使用你自己的域名）。</li>
+  <li>提供客户端，并把 <code>/v1/*</code> 转发到你的节点。浏览器只和你的服务器通信：同源、无 CORS、无第三方 API。</li>
+</ol>
+<p>随时重新运行同一条命令即可更新客户端。</p>
+
+<h2 id="use">使用客户端</h2>
+<h3>只读</h3>
+<p>输入你的用户名。客户端在你的节点上把它解析成 FID，加载你关注的人，用他们最新的 cast 组成信息流。不签名，也不向任何地方发送任何东西。</p>
+<h3>连接你的账号（用于发帖）</h3>
+<ol class="steps">
+  <li><b>粘贴助记词并点击 Check。</b>页面从助记词推导出你的托管地址（custody address），并从 Optimism 上的 IdRegistry 合约读取你的 FID。此时什么都不会发送。</li>
+  <li><b>点击 Add app key。</b>页面生成一对新的 Ed25519 密钥（你的应用密钥），并从你的节点读取当前密钥 nonce（<code>/v1/signersByFid</code> → <code>currentUserNonce</code>）。然后你的托管账户签署两条 EIP-712 消息：<i>SignedKeyRequest</i>（哪个应用请求该密钥，这里是你自己的 FID）和 <i>KeyAdd</i>（密钥本身、可签署的消息类型、有效期、下一个 nonce）。</li>
+  <li><b>它作为一条消息发送到你的节点。</b>两个签名都放在一条 <code>KEY_ADD</code> 消息里，而这条消息的外层由新密钥本身签名，以证明你持有它。你的节点校验后像转发 cast 一样转发它。大约一秒后密钥生效。页面清除助记词，只在本浏览器中保留应用密钥。</li>
+</ol>
+<h3>发帖、回复、点赞、转发、关注</h3>
+<p>每个操作都会构建一条协议消息，在浏览器里用你的应用密钥签名，再把原始字节提交给你的节点。像 <code>@alice</code> 这样的提及会在你的节点上解析，并作为协议级提及保存。</p>
+<h3>按应用包含或排除 cast</h3>
+<p>每条 cast 都由某个应用密钥签名，而每个应用密钥都记录了请求它的应用（该应用自己的 FID）。客户端在你的节点上为每位作者查询这一信息，显示为 <i>via farcaster</i>、<i>via own key</i> 等。点击信息流上方的应用名即可隐藏或显示它的 cast。你的选择会保存在本浏览器中。</p>
+<h3>Live：你的节点眼中的网络</h3>
+<p><b>Live</b> 显示网络接受的每一条消息，在你的节点收到后一两秒内出现：cast、点赞、关注、资料修改，以及有人超出存储上限时被修剪掉的消息。它读取你节点的事件日志（<code>/v1/events</code>，每个分片一份）和区块高度（<code>/v1/info</code>）。这里没有任何数据来自别人的服务器。</p>
+<h3>查看一条 cast 的底层消息</h3>
+<p>点击任意 cast 下方的 <code>{ }</code>，即可看到它背后的协议消息：BLAKE3 哈希、签名它的 Ed25519 密钥、请求该密钥的应用，以及指向你节点上原始 JSON 的链接。你的节点在检查完这三项之后才会保存这条 cast。</p>
+<h3>搜索</h3>
+<p>输入用户名或 FID。你的节点通过 <code>/v1/userNameProofByName</code> 解析名字；关注者和关注数来自它的关系存储。</p>
+<h3>只看投票者</h3>
+<p>在 Farcaster 网络投票中接受社会契约的人，持有 Base 上的 VOTE NFT，其 token id 就是他们的 FID（<a href="https://basescan.org/address/0x4ecfed276c566aeb49da1f3a888e8dbb7263028d">合约</a>）。客户端直接向 Base 查询 <code>ownerOf(fid)</code>，并把这些作者标记为 <i>voted</i>。打开 <b>Voters only</b>，信息流只显示参与投票的人。拒绝不会铸造任何东西，所以链上只能看到“同意”。</p>
+<h3>来自互关的回复</h3>
+<p><b>Replies</b> 汇总对你最近 cast 的回复和提及你的 cast，全部从你的节点读取。默认只显示互关的人，也就是你关注且也关注你的人。想看全部时切换到 <i>everyone</i>。</p>
+<h3>在手机上</h3>
+<p>打开你的客户端地址，选择<b>添加到主屏幕</b>（Safari：分享菜单；Chrome：⋮ 菜单）。它会像应用一样全屏打开，依然只和你的节点通信。</p>
+
+<h2 id="concepts">核心概念，用大白话说</h2>
+<dl>
+  <dt>FID</dt>
+  <dd>你的 Farcaster ID，一个数字。它存放在 Optimism 上的 <code>IdRegistry</code> 合约里。用户名、密钥和每条消息都指向它。</dd>
+  <dt>托管地址与助记词</dt>
+  <dd>拥有你 FID 的以太坊账户。助记词就是它的私钥。谁拥有助记词，谁就拥有这个账号，所以这里只在本地使用一次，用来添加应用密钥。</dd>
+  <dt>应用密钥（signer）</dt>
+  <dd>为你的消息签名的 Ed25519 密钥。你可以有很多把，每个应用一把。本客户端添加的是<b>免 gas</b> 密钥：一条由托管地址授权的 <code>KEY_ADD</code> 消息，无需交易。它有三条规则。<b>权限范围：</b>密钥列出它可以签署的消息类型（这里是 cast、反应、关注、资料），而且永远不能添加或移除其他密钥。<b>滑动有效期：</b>闲置一段时间后过期（最长 90 天，本客户端申请最长期限），每签一条消息都会重新计时。<b>Nonce：</b>每条 <code>KEY_ADD</code> 都带一个比该 FID 上一次更大的数字，旧的授权无法被重放。</dd>
+  <dd class="small">旧方式依然可用：在 Optimism 上调用 <code>KeyGateway.add</code>，需要交易和 gas。这类链上密钥没有权限范围和有效期。你的节点在 <code>/v1/signersByFid</code> 同时列出两种。</dd>
+  <dt>消息</dt>
+  <dd>你做的每件事都是一条小小的签名消息：<code>CAST_ADD</code>、<code>CAST_REMOVE</code>、<code>REACTION_ADD</code>（点赞或转发）、<code>LINK_ADD</code>（关注）、<code>USER_DATA_ADD</code>（资料）。每条都有 BLAKE3 哈希和 Ed25519 签名，任何节点都能在不信任任何人的情况下校验它。</dd>
+  <dt>Snapchain</dt>
+  <dd>对这些消息进行排序和存储的网络。验证者运行共识并出块。消息按 FID 分到不同分片；分片 0 为其他分片排序。</dd>
+  <dt>只读节点与验证者</dt>
+  <dd>只读节点跟随链，校验每个区块上验证者的签名，存储完整状态并提供 API。它不投票，也不保留内存池（mempool）。任何人都能运行；验证者是一组固定的运营者。</dd>
+  <dt>存储</dt>
+  <dd>存储是租用的，在 Optimism 上链上支付（<code>StorageRegistry</code> 合约），按单位计算。每个单位一段时间后到期，所以是续租，而不是一次买断。每个单位对每类消息（cast、反应、关注、资料）分别设上限。超出上限不会报错：该类中你<i>最旧</i>的消息会被修剪以腾出空间。这适合时间线，但也意味着非常活跃的账号可能失去旧的关注或 cast。租约到期后，网络会拒绝你的新消息。Snapchain 就是这样控制状态规模、在不按条收费的情况下防止垃圾信息的。</dd>
+  <dd>在你的节点上查看：<code>/v1/storageLimitsByFid?fid=YOUR_FID</code> 列出每类存储的 <code>limit</code> 和 <code>used</code>，以及你的存储单位和到期时间。租约和密钥事件也是你节点索引的链上事件：<code>/v1/onChainEventsByFid?fid=YOUR_FID&amp;event_type=EVENT_TYPE_STORAGE_RENT</code>。</dd>
+  <dt>用户名（fname）</dt>
+  <dd>通过签名证明映射到 FID 的可读名称。你的节点响应 <code>/v1/userNameProofByName?name=…</code>。</dd>
+  <dt>客户端</dt>
+  <dd>应用只是替你保管应用密钥、并从某个节点读取数据的程序。Farcaster 官方应用是其中之一，这是另一个。它们看到的都是同一个网络。</dd>
+</dl>
+
+<h2 id="writes">一条 cast 的旅程</h2>
+<ol class="steps">
+  <li>你点击 Cast。浏览器构建一条包含你的 FID、正文和提及的 <code>CAST_ADD</code> 消息，计算哈希，用你的应用密钥签名，并编码为 protobuf。</li>
+  <li>它被提交到你服务器上的 <code>/v1/submitMessage</code>，Caddy 再转发给你的只读节点。</li>
+  <li>你的节点校验它：FID 存在、密钥对该 FID 有效、哈希和签名正确、你有存储空间。任何一项不对都会立即返回错误。</li>
+  <li>只读节点不保留内存池，所以它通过 gossip（<code>mempool</code> 主题）把有效消息转发给验证者。</li>
+  <li>某个验证者把它打包进区块。你的节点同步这个区块，cast 出现在你的信息流里，通常只需几秒。</li>
+</ol>
+<div class="note">只读节点和验证者都接受 <code>submitMessage</code>。验证者把消息放进自己的内存池；只读节点不保留内存池，它校验消息、在 <code>mempool</code> 主题上广播，然后什么都不保留。所以返回 200 表示“有效且已转发”，而不是“已经上链”：如果在高负载下广播丢失，请重新提交。要确认已被打包，从你的节点读回这条消息。密钥消息（<code>KEY_ADD</code>、<code>KEY_REMOVE</code>）路由到分片 0；cast、反应和关注根据你的 FID 分配到某个消息分片。来源：<a href="https://snapchain.farcaster.xyz/node-types">Validators vs. read nodes</a>。</div>
+
+<h2 id="security">安全模型</h2>
+<ul>
+  <li><b>像对待 <code>rm -rf</code> 一样对待助记词。</b>它控制整个账号。请用测试账号来跑这个教程。一般来说，只把助记词粘贴到你自己运行的软件或你信任的开发者的软件里，并且尽可能使用委托登录（由持有你账号的应用为你批准一把密钥）。</li>
+  <li><b>你的助记词不会离开这个页面。</b>它只在你的浏览器里用来签署两份密钥授权，随后即被清除。它不会被发送到你的服务器，也不会被保存。你的节点唯一收到的是签好名的 <code>KEY_ADD</code>。</li>
+  <li><b>应用密钥保存在本浏览器中</b>（local storage）。它的权限范围允许签署 cast、反应、关注和资料修改，但永远不能转移你的 FID 或添加密钥。要停用，打开 Settings → <b>Revoke this key on the network</b>：密钥会签署自己的 <code>KEY_REMOVE</code>，无需助记词。如果设备丢失，可以从托管地址撤销，或者干脆不用：闲置的密钥在有效期结束后会自动过期。</li>
+  <li><b>你节点的 API 通过客户端地址公开</b>：任何人都能通过它读取（这些本来就是公开数据），也能提交签名有效的消息，而你的节点只负责转发。</li>
+</ul>
+<h3>“没有任何应用能封禁你”是什么意思，边界在哪里</h3>
+<p>你的账号属于你的托管密钥，而不属于任何应用。即使某个应用隐藏你或关停，你的 cast、关注和资料依然在网络上，这个客户端会通过你自己的节点读取和发布它们。它改变不了的是：区块由一小组固定的 Snapchain 验证者产生，理论上他们可以拒绝你的消息；而且网络只接受已支付存储租金的 FID 的消息。你的节点让你独立于应用和 API 提供商，而不是独立于协议本身的规则。</p>
+
+<h2 id="broke">搭建过程中踩过的坑</h2>
+<p>下面每一条都是在搭建演示节点时真实遇到的。现在脚本都已处理，但了解原因很有帮助。</p>
+<ul>
+  <li><b>Hetzner 报 “error during placement”。</b>该机房没有这个机型的容量了。现在第 0 步会依次尝试法尔肯施泰因、纽伦堡、赫尔辛基。</li>
+  <li><b>Hetzner 拒绝了 2 TB 的卷。</b>新账号的卷总量上限是 1 TB，而且申请提额因为账号太新被拒。现在第 0 步会退回到允许的最大容量，下面的守护程序让 1 TB 足够用。</li>
+  <li><b>快照放不下。</b>Snapchain 会保留每个下载的分块，再为每个分片写一个完整的 tar，然后解压，直到最后才清理。单个分片的峰值约 1.5 TB。现在 <code>node.sh</code> 会启动一个小守护程序，在节点用完分块和 tar 后立即删除，峰值保持在 800 GB 左右。</li>
+  <li><b>节点因指标错误反复崩溃重启。</b>官方主网 compose 文件把指标指向一个 <code>statsd</code> 服务，它也需要启动。<code>node.sh</code> 会同时启动两者。</li>
+  <li><b><code>df</code> 参数冲突</b>（<code>-P</code> 与 <code>--output</code>）导致 Ubuntu 上的磁盘检查中断。已修复。</li>
+  <li><b>应用密钥机制在开发途中变了。</b>第一版通过 Optimism 交易添加密钥，需要 1 美元的 ETH。现在 Snapchain 接受免 gas 密钥（<code>KEY_ADD</code>），这一步和 ETH 都不需要了。</li>
+  <li><b>助记词混淆。</b>Farcaster 应用里有两个助记词：账号的恢复助记词和钱包的助记词。只有账号的那个拥有你的 FID；客户端会在签名之前显示托管地址和 FID，方便你分辨。</li>
+</ul>
+
+<h2 id="trouble">故障排查</h2>
+<table>
+  <tr><th>你看到</th><th>这样做</th></tr>
+  <tr><td>客户端显示 “node unreachable”</td><td>节点还在下载快照。<code>townhall-status</code> 和节点日志会显示进度。</td></tr>
+  <tr><td>“blocks behind” 几个小时都不降</td><td>检查防火墙是否开放了 UDP 3382，以及磁盘是否已满（<code>df -h</code>）。</td></tr>
+  <tr><td>客户端地址无法通过 HTTPS 打开</td><td>申请证书需要开放 80 和 443 端口。如果 sslip.io 被限流，把你自己的域名指向这个 IP，并用 <code>DOMAIN=your.domain</code> 重新运行第 2 步。</td></tr>
+  <tr><td>“nonce is not greater than stored nonce”</td><td>期间你的 FID 又添加或移除了别的密钥。再点一次 Add app key，它会重新读取 nonce。</td></tr>
+  <tr><td>添加密钥后 cast 被拒</td><td>你的 FID 可能没有存储。在你的节点上查看 <code>/v1/storageLimitsByFid?fid=YOUR_FID</code>。</td></tr>
+  <tr><td>发帖时 “invalid signer”</td><td>你的节点还没处理到这个密钥事件，通常是因为还在同步。等同步完成。</td></tr>
+  <tr><td>第 0 步报 “volumes size limit exceeded”</td><td>新的 Hetzner 账号有卷总量上限。第 0 步会挂载允许的最大卷并提示你。以后要扩容，在 Hetzner 控制台（Limits）申请提额后调整卷大小。</td></tr>
+  <tr><td>第 0 步报 “error during placement”</td><td>该机房暂时没有这个机型。第 0 步会自动尝试其他欧洲机房。</td></tr>
+  <tr><td>消息因存储被拒</td><td>你的 FID 没有剩余存储单位。在任意 Farcaster 应用里租用存储。</td></tr>
+</table>
+
+<h2 id="cost">费用与清理</h2>
+<p>Hetzner Cloud 按小时计费，服务器和卷分别计费。演示节点（服务器加 1 TB 卷）前 12 小时约 2 美元，所以完整测试一次只需几美元。运行一个月大约一百多美元；请以 Hetzner 控制台的当前价格为准。如果要长期运行，带大硬盘的独立服务器更便宜。添加应用密钥不花钱。</p>
+<p>要停止计费，需要删除服务器<b>和</b>卷。下面这条命令会在确认后完成删除：</p>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<p>你的 Farcaster 账号不受影响。如果还想撤销应用密钥，请在删除服务器之前在客户端的 Settings → Revoke 中操作。</p>
+
+<h2 id="testers">在帮别人测试这个教程？</h2>
+<p>谢谢你。有用的测试报告是诚实的，包括失败的地方。请：</p>
+<ol class="steps">
+  <li>使用一个有存储的 Farcaster <b>测试</b>账号，不要用对你重要的账号。</li>
+  <li>在一台干净的机器上运行这三条命令，并记录时间。</li>
+  <li>等客户端显示节点已同步后：发一条 cast、关注一个人、点一个赞，并用筛选隐藏某个应用的 cast。</li>
+  <li>也在手机上打开看看。</li>
+  <li>运行 <code>destroy.sh</code>，停止计费。</li>
+  <li>在 Farcaster 上发帖说明过程，好的坏的都写，以及花了多长时间。</li>
+</ol>
+<p class="small">永远不要把你的助记词或 Hetzner 令牌发给任何人，包括作者本人。如果你的服务器费用或时间得到了报销，请在帖子里注明。</p>
+
+</main>
+</div>
+<footer>
+  MIT 许可 · <a href="https://github.com/townhall-fc/townhall">github.com/townhall-fc/townhall</a> · 基于开放的 Farcaster 协议和 Snapchain 构建。参考资料：<a href="https://docs.farcaster.xyz/learn/architecture/overview">架构</a>、<a href="https://snapchain.farcaster.xyz/guides/running-a-node">运行节点</a>、<a href="https://docs.neynar.com/snapchain/httpapi/httpapi">HTTP API</a>。
+</footer>
+
+<script>
+document.querySelectorAll('pre').forEach(function (pre) {
+  var b = document.createElement('button'); b.className = 'copy'; b.textContent = '复制';
+  b.onclick = function () { navigator.clipboard.writeText(pre.innerText.replace(/(复制|已复制)$/, '').trim()).then(function () { b.textContent = '已复制'; setTimeout(function () { b.textContent = '复制'; }, 1200); }); };
+  pre.appendChild(b);
+});
+(function(){var b=document.querySelector('.theme'),r=document.documentElement;
+function show(){b.textContent=r.dataset.theme==='light'?'深色':'浅色'}
+b.onclick=function(){r.dataset.theme=r.dataset.theme==='light'?'dark':'light';try{localStorage.setItem('theme',r.dataset.theme)}catch(e){}show()};show()})();
+</script>
+</body>
+</html>
