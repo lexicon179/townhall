@@ -50,7 +50,7 @@ button, input, textarea { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--hair);
 }
 .brand { font-weight: 500; font-size: 14px; letter-spacing: 0.38em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 9px; }
-.brand svg { width: 28px; height: 28px; border-radius: 7px; flex: none; }
+.brand svg { width: 30px; height: 30px; flex: none; }
 .node { font-size: 13.5px; color: var(--muted); display: flex; align-items: center; gap: 7px; order: 3; flex: 1 1 calc(100% - 60px); }
 .node b { color: var(--ink); font-weight: 600; }
 .node::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -300,3 +300,7 @@ body { padding-bottom: 76px; }
 .person { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--hair); }
 .person .name { display: block; font-weight: 600; text-decoration: none; }
 .person .handle { color: var(--muted); font-size: 14px; }
+
+/* the mark: a lime gargoyle on dark, a dark one on light */
+.lm-h { fill: #c6ff3d; } .lm-m { fill: #0d0d0f; } .lm-g { fill: #c6ff3d; }
+[data-theme=light] .lm-h { fill: #0d0d0f; } [data-theme=light] .lm-m { fill: #c6ff3d; } [data-theme=light] .lm-g { fill: #0d0d0f; }
