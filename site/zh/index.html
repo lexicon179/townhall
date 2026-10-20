@@ -115,6 +115,22 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 .ostabs button.on{color:var(--fg);border-color:color-mix(in srgb,var(--fg) 35%,transparent)}
 .os pre[data-os]{display:none}.os[data-on=unix] pre[data-os=unix],.os[data-on=win] pre[data-os=win]{display:block}
 .faq{margin:12px 0 0}.faq dt{font-weight:600;margin:20px 0 6px;font-size:17px}.faq dd{margin:0;color:var(--fg);max-width:66ch}
+.hero h1 .hl{color:var(--accent)}
+.try{margin:30px 0 0;max-width:620px;border:1.5px solid color-mix(in srgb,var(--accent) 70%,transparent);border-radius:16px;padding:14px;background:var(--card);box-shadow:0 0 0 6px color-mix(in srgb,var(--accent) 7%,transparent)}
+.try input{width:100%;font:inherit;font-size:18px;padding:14px 12px;border:0;background:transparent;color:var(--fg);outline:none}
+.try button{width:100%;font:inherit;font-size:17px;font-weight:600;padding:15px;border:0;border-radius:10px;background:var(--accent);color:var(--on-accent);cursor:pointer;margin-top:6px}
+.try-note{font-size:14px;color:var(--muted);margin:12px 0 0;max-width:none}
+.try-note a{color:var(--fg)}
+.nodecard{margin:26px 0 0;max-width:620px;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.nodecard .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);font-weight:500}
+.nodecard .hd i{width:9px;height:9px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 4px color-mix(in srgb,var(--muted) 20%,transparent)}
+.nodecard.ok .hd i{background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.nodecard .hd span{margin-left:auto;font-size:14px;color:var(--muted);font-weight:400}
+.nodecard .grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.nodecard .grid div{padding:14px 18px;border-right:1px solid var(--line)}.nodecard .grid div:last-child{border-right:0}
+.nodecard b{display:block;font-family:"Fira Mono",ui-monospace,monospace;font-size:19px;font-weight:400}
+.nodecard small{font-size:13px;color:var(--muted)}
+@media (max-width:600px){.nodecard .grid div{padding:12px 12px}.nodecard b{font-size:14.5px}.nodecard small{font-size:12px}}
 .qsh{margin:0 0 14px}
 .proof{max-width:860px;margin:0 auto;padding:8px 24px 24px}
 .proof h2{margin:0 0 6px}
@@ -144,10 +160,12 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 </nav>
 
 <header class="hero">
-  <h1>没有任何应用能封禁你。</h1>
+  <h1>没有任何应用能<span class="hl">封禁</span>你。</h1>
   <p class="lead2">你自己的 Farcaster 客户端和 Snapchain 节点，三条命令搞定。</p>
   <p class="sub">一切都运行在你自己控制的服务器上，不依赖任何人的 API 密钥。今晚敲十分钟命令，明天下午就同步完成。</p>
-  <div class="btns"><a class="p" href="#quickstart">开始</a><a class="s" href="https://app.townhallfc.xyz">查看在线演示</a></div>
+  <form class="try" id="try"><input name="u" placeholder="你的 Farcaster 用户名" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="你的 Farcaster 用户名"><button type="submit">打开我的信息流</button></form>
+  <p class="try-note">只读，直接来自我们的节点，无需签名。<a href="#quickstart">或者用三条命令运行你自己的 ↓</a></p>
+  <div class="nodecard" id="nodecard" aria-live="polite"><div class="hd"><i></i>演示节点<span data-k="st">连接中…</span></div><div class="grid"><div><b data-k="h">—</b><small>区块</small></div><div><b data-k="m">—</b><small>已存储消息</small></div><div><b data-k="a">—</b><small>账号</small></div></div></div>
   <p class="small zh-note">本页为机器辅助翻译，英文版为准。欢迎在 <a href="https://github.com/townhall-fc/townhall">GitHub</a> 提交修正。</p>
 </header>
 
@@ -155,21 +173,9 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <h2>真实的 cast，读自演示节点</h2>
   <p class="small">演示客户端在手机上的截图，2026 年 10 月。每条 cast、回复和头像都来自节点，而不是 API。点击可打开实时页面。</p>
   <div class="shots">
-    <figure><a href="https://app.townhallfc.xyz/#/c/3/0x597007de6219f87fdf71ad5769db542c8f2d1dde"><img src="../img/cast-dwr.webp" alt="Dan Romero 的客户端愿望清单及他的后续回复" width="800" height="1130" loading="lazy"></a><figcaption>@dwr 的客户端愿望清单，以及他自己的补充。</figcaption></figure>
+    <figure><a href="https://app.townhallfc.xyz/#/u/dwr"><img src="../img/cast-dwr.webp" alt="townhall 中 Dan Romero 的主页" width="800" height="1130" loading="lazy"></a><figcaption>@dwr 的主页：帖子，以及从节点读取的关注数。</figcaption></figure>
     <figure><a href="https://app.townhallfc.xyz/#/c/5650/0x9252885364ac7db01ac427e97dd246b7af619949"><img src="../img/cast-vitalik.webp" alt="Vitalik Buterin 带两张表格图片和回复的 cast" width="800" height="1050" loading="lazy"></a><figcaption>@vitalik.eth：图片与回复。</figcaption></figure>
     <figure><a href="https://app.townhallfc.xyz/#/c/129/0xa9c0dfd6c4b17ea8ac6f0a71aaa644fb41e0ef5c"><img src="../img/cast-phil.webp" alt="Phil 宣布关闭一个应用，以及回复" width="800" height="960" loading="lazy"></a><figcaption>@phil 关闭了一个应用。应用来来去去，账号和 cast 留在网络上。</figcaption></figure>
-  </div>
-  <div class="wish">
-    <h3>Dan Romero 的客户端愿望清单，10 月 16 日</h3>
-    <p class="small">清单中 townhall 已经做到的：</p>
-    <ol>
-      <li><div>只显示互关者的通知 <span>· 回复页默认只显示互关者，可切换为所有人</span></div></li>
-      <li><div>没有频道</div></li>
-      <li><div>没有钱包</div></li>
-      <li><div>只含关注者、按时间倒序的信息流 <span>· 即首页信息流</span></div></li>
-      <li><div>没有小程序</div></li>
-      <li><div>没有私信</div></li>
-    </ol>
   </div>
 </section>
 
@@ -470,6 +476,19 @@ document.querySelectorAll('.os').forEach(function(o){
   function set(v){o.dataset.on=v;o.querySelectorAll('.ostabs button').forEach(function(b){b.classList.toggle('on',b.dataset.os===v);b.setAttribute('aria-selected',b.dataset.os===v)})}
   o.querySelectorAll('.ostabs button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.os').forEach(function(x){x.__set&&x.__set(b.dataset.os)})}});
   o.__set=set;set(win?'win':'unix')})})();
+</script>
+<script>
+(function(){var APP='https://app.townhallfc.xyz';
+document.getElementById('try').onsubmit=function(e){e.preventDefault();var u=this.u.value.trim().replace(/^@/,'');location.href=APP+'/#/read/'+encodeURIComponent(u||'dwr')};
+var c=document.getElementById('nodecard'),f=function(n){return Number(n).toLocaleString('en-US')};
+function set(k,v){c.querySelector('[data-k='+k+']').textContent=v}
+function tick(){fetch(APP+'/v1/info',{cache:'no-store'}).then(function(r){return r.json()}).then(function(i){
+  var sh=(i.shardInfos||[]).filter(function(s){return s.shardId!==0});
+  var behind=Math.max.apply(null,sh.map(function(s){return Number(s.blockDelay||0)}).concat([0]));
+  set('h',f(Math.max.apply(null,sh.map(function(s){return Number(s.maxHeight||0)}).concat([0]))));
+  set('m',f(i.dbStats.numMessages));set('a',f(i.dbStats.numFidRegistrations));
+  set('st',behind<10?'已同步':'落后 '+behind+' 个区块');c.classList.toggle('ok',behind<10)}).catch(function(){})}
+tick();setInterval(function(){if(!document.hidden)tick()},4000)})();
 </script>
 </body>
 </html>

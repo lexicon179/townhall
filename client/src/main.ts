@@ -652,6 +652,14 @@ async function route() {
       if (!fid) { $view.innerHTML = `<div class="center">No account named ${esc(decodeURIComponent(parts[1]))} on your node.</div>`; return; }
       return await viewProfile(fid);
     }
+    if (parts[0] === 'read' && parts[1]) { // #/read/<username>: open that account's home feed, read-only (links from the guide)
+      const name = decodeURIComponent(parts[1]).replace(/^@/, '');
+      const fid = /^\d+$/.test(name) ? Number(name) : await fidByName(name);
+      if (!fid) { $view.innerHTML = `<div class="center">No account named ${esc(name)} on this node.</div>`; return; }
+      if (!key) localStorage.setItem('readFid', String(fid));
+      history.replaceState(null, '', '#/'); renderMe();
+      return await viewFeed();
+    }
     if (parts[0] === 'search') return viewSearch(decodeURIComponent(parts[1] || ''));
     if (parts[0] === 'c' && parts[2]) return await viewThread(Number(parts[1]), parts[2]);
     if (parts[0] === 'settings') return viewSettings();

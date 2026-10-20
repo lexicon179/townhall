@@ -51,6 +51,8 @@ $SITES {
 		Content-Security-Policy "default-src 'self'; img-src * data:; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
 	}
 	handle /v1/* {
+		# /v1/info is readable from other sites, so a guide can show the node's live block height
+		header /v1/info Access-Control-Allow-Origin *
 		reverse_proxy 127.0.0.1:3381
 	}
 	handle /api/* {

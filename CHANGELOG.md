@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Guide: try it first. Type a username and open that feed read-only on the demo node (`#/read/<username>`); a live card shows the demo node's block, messages and accounts (the web server allows other sites to read `/v1/info`).
 - The gargoyle shows your node's state: awake and blinking when in sync, squinting and looking around while it catches up, asleep while it downloads the network or can't be reached.
 - Fix: leaving Live (or any page) while it was still loading could paint "Cannot set properties of null" over the next page.
 - Follower and following counts: distinct accounts, shown within a second and growing as the node pages through large accounts. Fixes a blank or inflated count when the node kept returning the last page.

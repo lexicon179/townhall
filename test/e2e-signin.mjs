@@ -60,6 +60,14 @@ await sp.waitForSelector('.cast', { timeout: 15000 });
 ok('opening the link shows that cast', sp.url().includes('#/c/') && (await sp.locator('.cast').first().locator('.text').first().textContent()) === firstText);
 await ctxShare.close();
 
+// #/read/<username>: the guide's "Open my feed" box
+const ctxRead = await b.newContext({ viewport: { width: 420, height: 900 } });
+const rp = await ctxRead.newPage();
+await rp.goto('http://localhost:3999/#/read/alice');
+await rp.waitForSelector('.cast', { timeout: 15000 });
+ok('#/read/<username> opens that account\'s feed, read-only', rp.url().endsWith('#/') && await rp.evaluate(() => localStorage.getItem('readFid') === '100' && !localStorage.getItem('appKey')));
+await ctxRead.close();
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail) console.log(logs.slice(-15).join('\n'));
 await b.close();
