@@ -57,6 +57,7 @@ th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px 6px;vertic
 dl dt{font-weight:700;margin-top:14px}dl dd{margin:2px 0 0 0;color:var(--fg)}
 .small{font-size:14px;color:var(--muted)}
 .hero{text-align:center;padding:64px 0 24px}
+.hero .tag{font-size:22px;font-weight:500;margin:12px 0 0;max-width:none}
 .hero .sub{font-size:17px;color:var(--muted);margin:10px auto 0;max-width:none}
 .btns{display:flex;gap:14px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 .btns a{min-width:220px;padding:11px 18px;border-radius:6px;font-size:14px;font-weight:500;text-decoration:none;box-sizing:border-box}
@@ -79,7 +80,8 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 
 <div class="hero">
 <h1>townhall</h1>
-<p class="sub">Your own Farcaster client and Snapchain read node, in three commands. No API keys from anyone.</p>
+<p class="tag">No app can ban you.</p>
+<p class="sub">No app between you and Farcaster: your own client and Snapchain read node, in three commands.</p>
 <div class="btns"><a class="p" href="#quickstart">Run your own</a><a class="s" href="#what">Read the guide</a></div>
 </div>
 
@@ -222,6 +224,9 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <li><b>The app key lives in this browser</b> (local storage). Its scopes let it sign casts, reactions, follows and profile changes, never move your FID or add keys. To stop, open Settings → <b>Revoke this key on the network</b>: the key signs its own <code>KEY_REMOVE</code>, no recovery phrase needed. If you lose the device, revoke from your custody address, or just stop: an unused key expires on its own when its TTL runs out.</li>
   <li><b>Your node's API is public</b> through your client address: anyone can read through it (it is public data anyway) and submit validly signed messages, which your node only relays.</li>
 </ul>
+
+<h3>What "no app can ban you" means, and where it stops</h3>
+<p>Your account belongs to your custody key, not to any app. If an app hides you or shuts down, your casts, follows and profile are still on the network, and this client reads and posts them through your own node. What it does not change: blocks are produced by a small, fixed set of Snapchain validators, which in principle could refuse your messages, and the network only accepts messages from FIDs with storage rent paid. Your node makes you independent of apps and API providers, not of the protocol's own rules.</p>
 
 <h2 id="trouble">Troubleshooting</h2>
 <table>
