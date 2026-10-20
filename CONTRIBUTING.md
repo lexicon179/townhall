@@ -33,5 +33,5 @@ node test/e2e-signin.mjs /tmp/shots
 ## Pull requests
 
 - Keep changes small and say what you tested.
-- Scripts in `install/` must stay readable top to bottom: they are part of the tutorial.
+- Scripts in `install/` must stay readable top to bottom: they are part of the tutorial. They are plain Bash so step 0 runs on any Mac or Linux without installing anything, and they must pass `shellcheck install/*.sh` (CI runs it, along with a type check and build of the client).
 - No secrets in issues, logs or screenshots: no recovery phrases, Hetzner tokens or private keys.

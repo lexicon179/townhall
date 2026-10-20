@@ -1,0 +1,23 @@
+# Lints the install scripts and type-checks and builds the client on every push and pull request.
+name: check
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck install/*.sh
+        run: shellcheck install/*.sh
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - working-directory: client
+        run: npm ci && npx tsc --noEmit -p . && npm run build
