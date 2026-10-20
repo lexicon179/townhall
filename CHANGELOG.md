@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Self-hosted sign-in page offers the same choice: your own keys now, or the Farcaster app with one more command; the guide explains delegated sign-in.
+- Self-hosted sign-in page: your own keys, with a pointer to delegated sign-in (one more command); the guide explains it.
 - The node status line has its own row, so long statuses no longer push the header around.
 - Link previews for shared casts on every install: `client.sh` starts the preview service; `signin.sh` adds sign-in to it.
 - Share: "Link copied" confirmation, and a fallback where the clipboard API is blocked.

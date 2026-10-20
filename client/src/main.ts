@@ -551,34 +551,16 @@ function viewSetup() {
     $view.append(h('<div class="hero"><h1>No app can ban you.</h1><p>Farcaster, read from a real node. Sign in the easy way, or hold your own keys.</p></div>'), choice, slot, ro);
     if (resumeSignin()) pick('app');
   } else {
-    // Self-hosted without the sign-in service: your own keys work now; the app needs signin.sh.
-    const choice = h(`
-      <section class="choice" role="group" aria-label="How to sign in">
-        <button class="pick on" data-choice="keys">
-          <b>Use your own keys</b>
-          <span>Your recovery phrase signs this client's key directly. Use a test account.</span>
-        </button>
-        <button class="pick" data-choice="app">
-          <b>Sign in with the Farcaster app</b>
-          <span>Approve in the app, no recovery phrase. One more command on your server turns it on.</span>
-        </button>
-      </section>`);
-    const howto = h(`
-      <section class="option">
-        <h2>Sign in with the Farcaster app</h2>
-        <p class="muted">A sign-in request names the app asking for the key, and the app is a Farcaster account. Give your server a spare account to act as the app, and this page offers the Farcaster app as a way in:</p>
+    // Self-hosted without the sign-in service: your own keys; the Farcaster app is one more command away.
+    const more = h(`
+      <details class="adv">
+        <summary>Rather sign in with the Farcaster app, without a phrase?</summary>
+        <p class="muted">A sign-in request names the app asking for the key, and the app is a Farcaster account. Give your server a spare account to act as the app, and this page will offer the Farcaster app as a way in:</p>
         <pre class="cmd">ssh -t root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/signin.sh | IMPORT=1 bash'</pre>
         <p class="muted"><a href="https://townhallfc.xyz/#signin" target="_blank" rel="noreferrer">How it works</a></p>
-      </section>`);
-    const slot = h('<div class="choice-slot"></div>');
-    slot.append(w);
-    choice.addEventListener('click', (ev) => {
-      const b = (ev.target as HTMLElement).closest<HTMLElement>('.pick');
-      if (!b) return;
-      choice.querySelectorAll<HTMLElement>('.pick').forEach((x) => x.classList.toggle('on', x === b));
-      slot.replaceChildren(b.dataset.choice === 'app' ? howto : w);
-    });
-    $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), choice, slot, ro);
+      </details>`);
+    w.append(more);
+    $view.append(h('<div class="hero"><h1>Farcaster, read from your own node.</h1><p>Every cast here comes from the copy of the network on your server. Posts are signed in this browser with a key that belongs to you.</p></div>'), w, ro);
   }
 }
 
