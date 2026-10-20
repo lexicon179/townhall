@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Windows: PowerShell versions of step 0 and cleanup (`provision.ps1`, `destroy.ps1`); the guide shows Mac/Linux and Windows commands.
+- Install scripts name the exact command to install a missing tool (brew, apt or dnf).
 - Live view: the network's event log as your node receives it.
 - Inspect a cast's protocol message.
 - Search by username or FID; follower and following counts; Farcaster-style relative times.

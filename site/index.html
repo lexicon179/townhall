@@ -110,6 +110,10 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 @media (max-width:600px){.timeline{grid-template-columns:1fr}.stepper .dur{margin-left:0}.hero{padding-top:44px}}
 footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
 td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhere}
+.ostabs{display:flex;gap:4px;margin:14px 0 -6px}
+.ostabs button{font:inherit;font-size:13px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer}
+.ostabs button.on{color:var(--fg);border-color:color-mix(in srgb,var(--fg) 35%,transparent)}
+.os pre[data-os]{display:none}.os[data-on=unix] pre[data-os=unix],.os[data-on=win] pre[data-os=win]{display:block}
 .qsh{margin:0 0 14px}
 .proof{max-width:860px;margin:0 auto;padding:8px 24px 24px}
 .proof h2{margin:0 0 6px}
@@ -172,7 +176,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <ol class="stepper">
     <li>
       <div class="sh"><span class="n">0</span><h3>Get a server</h3><span class="where">your computer</span><span class="dur">~3 min</span></div>
-      <pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+      <div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex</code></pre></div>
       <p>Creates a Hetzner server with a 1 TB disk and prints its IP. You need a <a href="#before">Hetzner API token</a>.</p>
     </li>
     <li>
@@ -191,7 +195,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
     <div class="bar"><span style="flex:11">snapshot · ~11 h</span><span style="flex:10">catching up · ~10 h</span></div>
     <div><b>Tomorrow</b><span>in sync, post from your node</span></div>
   </div>
-  <p class="small">Measured on the <a href="https://app.townhallfc.xyz">demo node</a>, October 2026. Already have a server (Ubuntu, 4 vCPU, 16 GB RAM, 1 TB disk)? Skip step 0. Done testing? <a href="#cost">One command deletes everything.</a></p>
+  <p class="small">Measured on the <a href="https://app.townhallfc.xyz">demo node</a>, October 2026. Already have a server (Ubuntu, 4 vCPU, 16 GB RAM, 1 TB disk)? Skip step 0. Done testing? <a href="#cost">One command deletes everything.</a> On Windows, use PowerShell (not cmd) for all three.</p>
 </section>
 
 
@@ -244,12 +248,12 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <tr><th>You need</th><th>Why</th><th>How</th></tr>
   <tr><td>A server with 4 vCPU, 16 GB RAM and a 1 TB disk</td><td>Snapchain documents 2 TB. 1 TB is enough to sync today: the demo node peaked at about 800 GB (see <a href="#expect">measured</a>). Use 2 TB if you keep the node for months, since the network keeps growing.</td><td>Step 0 creates one on Hetzner. Create an account, a project, then <i>Security → API tokens → Generate</i> with Read &amp; Write.</td></tr>
   <tr><td>A Farcaster <b>test</b> account that has storage, and its recovery phrase</td><td>Only to post. The phrase signs one <code>KEY_ADD</code> message that adds your app key. No gas. Read-only mode needs just a username.</td><td>In the Farcaster app settings, under Advanced → Recovery phrase. Check its storage on your node: <code>/v1/storageLimitsByFid?fid=…</code>.</td></tr>
-  <tr><td>A terminal with <code>curl</code>, <code>jq</code>, <code>ssh</code></td><td>To run the three commands.</td><td>macOS: <code>brew install jq</code>. Ubuntu: <code>sudo apt install jq</code>.</td></tr>
+  <tr><td>A terminal with <code>curl</code>, <code>jq</code>, <code>ssh</code></td><td>To run the three commands.</td><td>macOS: <code>brew install jq</code>. Ubuntu: <code>sudo apt install jq</code>. Windows 10/11: PowerShell, nothing to install (it has <code>ssh</code>; step 0 has its own PowerShell version).</td></tr>
 </table>
 <p>Hands-on time is about 10 minutes. The node then syncs on its own, for most of a day.</p>
 
 <h2 id="step0">Step 0 · Get a server</h2>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex</code></pre></div>
 <p>What it does, in order:</p>
 <ol>
   <li>Uses your SSH key (<code>~/.ssh/id_ed25519.pub</code>, created if missing) and uploads it to Hetzner, so only you can log in.</li>
@@ -258,6 +262,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <li>Creates the server with Ubuntu 24.04 and attaches a volume for the node's data: 2 TB if your account allows it, otherwise the largest it allows. 1 TB is enough (see <a href="#expect">measured</a>).</li>
   <li>Waits until it can SSH in, then prints the next two commands with your IP filled in.</li>
 </ol>
+<p class="small">On Windows the PowerShell version does the same steps; it may ask you to press Enter twice when it creates your SSH key. Steps 1 and 2 work as they are in PowerShell.</p>
 <p class="small">Options: <code>LOCATION=nbg1</code>, <code>SERVER_TYPE=…</code>, <code>VOLUME_GB=…</code>. A server is billed while it exists, see <a href="#cost">cost &amp; cleanup</a>.</p>
 
 <h2 id="step1">Step 1 · Run a Snapchain read node</h2>
@@ -389,7 +394,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
 <h2 id="cost">Cost &amp; cleanup</h2>
 <p>Hetzner Cloud bills by the hour, for the server and for the volume. The demo node (server plus 1 TB volume) came to about $2 for its first 12 hours, so a full test run costs a few dollars. Running it for a month is roughly a hundred-odd dollars; check current prices in the Hetzner console. A dedicated server with large disks is cheaper if you keep the node for good. Adding the app key costs nothing.</p>
 <p>To stop paying, delete the server <b>and</b> the volume. This does it and asks you to confirm first:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.ps1 | iex</code></pre></div>
 <p>Your Farcaster account is unaffected. To also revoke the app key, use Settings → Revoke in the client before you delete the server.</p>
 
 <h2 id="testers">Testing this tutorial for someone?</h2>
@@ -418,6 +423,13 @@ document.querySelectorAll('pre').forEach(function (pre) {
 (function(){var b=document.querySelector('.theme'),r=document.documentElement;
 function show(){b.textContent=r.dataset.theme==='light'?'Dark':'Light'}
 b.onclick=function(){r.dataset.theme=r.dataset.theme==='light'?'dark':'light';try{localStorage.setItem('theme',r.dataset.theme)}catch(e){}show()};show()})();
+</script>
+<script>
+(function(){var win=/Windows/i.test(navigator.userAgent);
+document.querySelectorAll('.os').forEach(function(o){
+  function set(v){o.dataset.on=v;o.querySelectorAll('.ostabs button').forEach(function(b){b.classList.toggle('on',b.dataset.os===v);b.setAttribute('aria-selected',b.dataset.os===v)})}
+  o.querySelectorAll('.ostabs button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.os').forEach(function(x){x.__set&&x.__set(b.dataset.os)})}});
+  o.__set=set;set(win?'win':'unix')})})();
 </script>
 </body>
 </html>

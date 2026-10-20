@@ -27,7 +27,16 @@ REPO_RAW="${REPO_RAW:-https://raw.githubusercontent.com/townhall-fc/townhall/mai
 
 say() { printf '\033[1m▸ %s\033[0m\n' "$*"; }
 die() { printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
-need() { command -v "$1" >/dev/null 2>&1 || die "Please install '$1' first."; }
+# Missing a tool? Say exactly how to install it on this system.
+need() {
+  command -v "$1" >/dev/null 2>&1 && return
+  local apt="$1" dnf="$1"
+  case "$1" in ssh|ssh-keygen) apt=openssh-client; dnf=openssh-clients ;; esac
+  if command -v brew >/dev/null 2>&1; then die "Please install '$1' first:  brew install $1"
+  elif command -v apt-get >/dev/null 2>&1; then die "Please install '$1' first:  sudo apt update && sudo apt install -y $apt"
+  elif command -v dnf >/dev/null 2>&1; then die "Please install '$1' first:  sudo dnf install -y $dnf"
+  else die "Please install '$1' first."; fi
+}
 
 need curl; need jq; need ssh; need ssh-keygen
 [ -n "${HCLOUD_TOKEN:-}" ] || die "Set HCLOUD_TOKEN (Hetzner Cloud → project → Security → API tokens, Read & Write)."

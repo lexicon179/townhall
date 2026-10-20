@@ -110,6 +110,10 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 @media (max-width:600px){.timeline{grid-template-columns:1fr}.stepper .dur{margin-left:0}.hero{padding-top:44px}}
 footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
 td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhere}
+.ostabs{display:flex;gap:4px;margin:14px 0 -6px}
+.ostabs button{font:inherit;font-size:13px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer}
+.ostabs button.on{color:var(--fg);border-color:color-mix(in srgb,var(--fg) 35%,transparent)}
+.os pre[data-os]{display:none}.os[data-on=unix] pre[data-os=unix],.os[data-on=win] pre[data-os=win]{display:block}
 .qsh{margin:0 0 14px}
 .proof{max-width:860px;margin:0 auto;padding:8px 24px 24px}
 .proof h2{margin:0 0 6px}
@@ -173,7 +177,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <ol class="stepper">
     <li>
       <div class="sh"><span class="n">0</span><h3>准备服务器</h3><span class="where">在你的电脑上</span><span class="dur">约 3 分钟</span></div>
-      <pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+      <div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex</code></pre></div>
       <p>在 Hetzner 上创建一台带 1 TB 磁盘的服务器，并打印它的 IP。你需要一个 <a href="#before">Hetzner API 令牌</a>。</p>
     </li>
     <li>
@@ -192,7 +196,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
     <div class="bar"><span style="flex:11">快照 · 约 11 小时</span><span style="flex:10">追块 · 约 10 小时</span></div>
     <div><b>明天</b><span>同步完成，从你的节点发帖</span></div>
   </div>
-  <p class="small">数据来自 2026 年 10 月的<a href="https://app.townhallfc.xyz">演示节点</a>。已经有服务器（Ubuntu、4 vCPU、16 GB 内存、1 TB 磁盘）？跳过第 0 步。测试完了？<a href="#cost">一条命令删除全部资源。</a></p>
+  <p class="small">数据来自 2026 年 10 月的<a href="https://app.townhallfc.xyz">演示节点</a>。已经有服务器（Ubuntu、4 vCPU、16 GB 内存、1 TB 磁盘）？跳过第 0 步。测试完了？<a href="#cost">一条命令删除全部资源。</a> Windows 上请用 PowerShell（不要用 cmd）运行这三条命令。</p>
 </section>
 
 
@@ -245,12 +249,12 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <tr><th>你需要</th><th>原因</th><th>怎么做</th></tr>
   <tr><td>一台 4 vCPU、16 GB 内存、1 TB 磁盘的服务器</td><td>Snapchain 文档写的是 2 TB。目前 1 TB 足够同步：演示节点峰值约 800 GB（见<a href="#expect">实测数据</a>）。如果要长期运行好几个月，用 2 TB，因为网络在持续增长。</td><td>第 0 步会在 Hetzner 上创建一台。注册账号、新建项目，然后在 <i>Security → API tokens → Generate</i> 生成一个 Read &amp; Write 令牌。</td></tr>
   <tr><td>一个有存储空间的 Farcaster <b>测试</b>账号，以及它的助记词</td><td>仅发帖时需要。助记词只签署一条添加应用密钥的 <code>KEY_ADD</code> 消息，无需 gas。只读模式只需要用户名。</td><td>在 Farcaster 应用的设置里：Advanced → Recovery phrase。在你的节点上查看存储：<code>/v1/storageLimitsByFid?fid=…</code>。</td></tr>
-  <tr><td>一个带 <code>curl</code>、<code>jq</code>、<code>ssh</code> 的终端</td><td>用来运行这三条命令。</td><td>macOS：<code>brew install jq</code>。Ubuntu：<code>sudo apt install jq</code>。</td></tr>
+  <tr><td>一个带 <code>curl</code>、<code>jq</code>、<code>ssh</code> 的终端</td><td>用来运行这三条命令。</td><td>macOS：<code>brew install jq</code>。Ubuntu：<code>sudo apt install jq</code>。Windows 10/11：使用 PowerShell，无需安装（自带 <code>ssh</code>；第 0 步有单独的 PowerShell 版本）。</td></tr>
 </table>
 <p>动手时间约 10 分钟。之后节点会自行同步，大约需要一天中的大部分时间。</p>
 
 <h2 id="step0">第 0 步 · 准备服务器</h2>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex</code></pre></div>
 <p>它依次做这些事：</p>
 <ol>
   <li>使用你的 SSH 密钥（<code>~/.ssh/id_ed25519.pub</code>，没有就创建）并上传到 Hetzner，只有你能登录。</li>
@@ -259,6 +263,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <li>创建 Ubuntu 24.04 服务器并挂载一块数据卷：账户允许就用 2 TB，否则用允许的最大值。1 TB 就够（见<a href="#expect">实测数据</a>）。</li>
   <li>等到能 SSH 登录后，打印接下来两条已填好 IP 的命令。</li>
 </ol>
+<p class="small">在 Windows 上，PowerShell 版本执行相同的步骤；创建 SSH 密钥时可能需要按两次回车。第 1、2 步在 PowerShell 中可直接运行。</p>
 <p class="small">可选参数：<code>LOCATION=nbg1</code>、<code>SERVER_TYPE=…</code>、<code>VOLUME_GB=…</code>。服务器存在期间按时计费，见<a href="#cost">费用与清理</a>。</p>
 
 <h2 id="step1">第 1 步 · 运行 Snapchain 只读节点</h2>
@@ -387,7 +392,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
 <h2 id="cost">费用与清理</h2>
 <p>Hetzner Cloud 按小时计费，服务器和卷分别计费。演示节点（服务器加 1 TB 卷）前 12 小时约 2 美元，所以完整测试一次只需几美元。运行一个月大约一百多美元；请以 Hetzner 控制台的当前价格为准。如果要长期运行，带大硬盘的独立服务器更便宜。添加应用密钥不花钱。</p>
 <p>要停止计费，需要删除服务器<b>和</b>卷。下面这条命令会在确认后完成删除：</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+<div class="os"><div class="ostabs" role="tablist"><button type="button" data-os="unix" role="tab">Mac / Linux</button><button type="button" data-os="win" role="tab">Windows</button></div><pre data-os="unix"><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre><pre data-os="win"><code>$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.ps1 | iex</code></pre></div>
 <p>你的 Farcaster 账号不受影响。如果还想撤销应用密钥，请在删除服务器之前在客户端的 Settings → Revoke 中操作。</p>
 
 <h2 id="testers">在帮别人测试这个教程？</h2>
@@ -417,6 +422,13 @@ document.querySelectorAll('pre').forEach(function (pre) {
 (function(){var b=document.querySelector('.theme'),r=document.documentElement;
 function show(){b.textContent=r.dataset.theme==='light'?'深色':'浅色'}
 b.onclick=function(){r.dataset.theme=r.dataset.theme==='light'?'dark':'light';try{localStorage.setItem('theme',r.dataset.theme)}catch(e){}show()};show()})();
+</script>
+<script>
+(function(){var win=/Windows/i.test(navigator.userAgent);
+document.querySelectorAll('.os').forEach(function(o){
+  function set(v){o.dataset.on=v;o.querySelectorAll('.ostabs button').forEach(function(b){b.classList.toggle('on',b.dataset.os===v);b.setAttribute('aria-selected',b.dataset.os===v)})}
+  o.querySelectorAll('.ostabs button').forEach(function(b){b.onclick=function(){document.querySelectorAll('.os').forEach(function(x){x.__set&&x.__set(b.dataset.os)})}});
+  o.__set=set;set(win?'win':'unix')})})();
 </script>
 </body>
 </html>

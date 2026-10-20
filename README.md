@@ -21,6 +21,12 @@ ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townh
 ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'
 ```
 
+On Windows, open PowerShell (not cmd). Step 0 and cleanup have PowerShell versions; steps 1 and 2 work as they are:
+
+```powershell
+$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.ps1 | iex
+```
+
 Already have a server (Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 1 TB disk or more)? Skip step 0.
 
 Done testing? Delete the server and volume so billing stops:
@@ -28,6 +34,8 @@ Done testing? Delete the server and volume so billing stops:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash
 ```
+
+Windows: `$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.ps1 | iex`
 
 ## What to expect
 
@@ -68,7 +76,8 @@ The same service gives shared casts a link preview: `/c/<fid>/<hash>` shows the 
 ## Repository
 
 ```
-install/   provision.sh (0), node.sh (1), client.sh (2), destroy.sh, signin.sh, snapshot-guard.sh
+install/   provision.sh (0), node.sh (1), client.sh (2), destroy.sh, signin.sh, snapshot-guard.sh;
+           provision.ps1 and destroy.ps1 for Windows PowerShell
 client/    the web client (TypeScript, Vite, @farcaster/core, viem)
 server/    optional sign-in service for hosted use
 site/      the tutorial
