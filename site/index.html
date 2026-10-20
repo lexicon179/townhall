@@ -74,48 +74,88 @@ dl dt{font-weight:700;margin-top:14px}dl dd{margin:2px 0 0 0;color:var(--fg)}
 main{max-width:860px}
 p,li{max-width:66ch}
 footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+
+/* layout v2 */
+.hero{text-align:left;max-width:860px;margin:0 auto;padding:72px 24px 24px}
+.hero h1{font-size:clamp(38px,6.4vw,64px);line-height:1.04;font-weight:500;letter-spacing:-.02em;margin:0}
+.hero .sub{font-size:19px;color:var(--muted);margin:18px 0 0;max-width:56ch}
+.btns{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap;justify-content:flex-start}
+.btns a{min-width:0;padding:12px 22px;border-radius:6px;font-size:15px;font-weight:500;text-decoration:none}
+.btns .p{background:var(--accent);color:var(--on-accent)}.btns .s{background:none;color:var(--fg);border:1px solid var(--line)}
+.qs{max-width:860px;margin:0 auto;padding:24px 24px 8px}
+.stepper{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+.stepper li{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--card)}
+.stepper .sh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.stepper .n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+.stepper h3{margin:0;font-size:19px;font-weight:500}
+.stepper .where,.stepper .dur{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-family:"Fira Mono",ui-monospace,monospace}
+.stepper .dur{margin-left:auto}
+.stepper pre{margin:14px 0 10px;white-space:pre-wrap;word-break:break-all}
+.stepper p{margin:0;color:var(--muted);font-size:15px}
+.timeline{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;margin:22px 0 10px;font-size:14px}
+.timeline b{display:block;font-weight:600}.timeline span{color:var(--muted);font-size:13px}
+.timeline .bar{display:flex;gap:3px;height:30px}
+.timeline .bar span{display:flex;align-items:center;justify-content:center;border-radius:6px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--fg);font-size:12.5px;white-space:nowrap;overflow:hidden}
+.timeline .bar span+span{background:color-mix(in srgb,var(--accent) 30%,transparent)}
+.layout{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px;padding:0 24px}
+.layout main{max-width:740px;margin:0;padding:24px 0 120px}
+.toc{position:sticky;top:70px;align-self:start;display:flex;flex-direction:column;gap:2px;padding-top:56px;font-size:14px}
+.toc b{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.toc a{color:var(--muted);text-decoration:none;padding:4px 0}.toc a:hover{color:var(--fg)}
+@media (max-width:900px){.layout{grid-template-columns:1fr;gap:0}.toc{position:static;padding-top:24px;flex-direction:row;flex-wrap:wrap;gap:6px 14px}.toc b{width:100%}}
+@media (max-width:600px){.timeline{grid-template-columns:1fr}.stepper .dur{margin-left:0}.hero{padding-top:44px}}
+footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
 </style>
 </head>
 <body>
 <nav class="top">
   <a class="wm" href="#"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" fill="#c6ff3d"/><g transform="translate(10 8) scale(.8)"><path d="M16 32 L22 6 L38 24 H62 L78 6 L84 32 V76 Q84 92 68 92 H32 Q16 92 16 76 Z" fill="#0d0d0f"/><path d="M20 42 L50 50 L80 42 V54 L50 62 L20 54 Z" fill="#c6ff3d"/><path d="M30 50 L42 53 V56 L30 53 Z M70 50 L58 53 V56 L70 53 Z" fill="#0d0d0f"/><rect x="28" y="70" width="44" height="12" rx="3" fill="#c6ff3d"/><path d="M36 70 L40 77 L44 70 Z M56 70 L60 77 L64 70 Z" fill="#0d0d0f"/></g></svg>TOWNHALL</a>
-  <span class="links"><a href="#quickstart">Quickstart</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a><a href="#security">Security</a><a href="#trouble">Troubleshooting</a><a href="https://github.com/townhall-fc/townhall">GitHub</a></span>
+  <span class="links"><a href="#quickstart">Quickstart</a><a href="#guide">Guide</a><a href="https://app.townhallfc.xyz">Live demo</a><a href="https://github.com/townhall-fc/townhall">GitHub</a></span>
   <button class="theme" type="button" aria-label="Switch light or dark theme"></button>
 </nav>
+
+<header class="hero">
+  <h1>Your own Farcaster,<br>in three commands.</h1>
+  <p class="sub">A Snapchain read node and a client, on a server you control. No API keys from anyone. Ten minutes of typing tonight, synced by tomorrow afternoon.</p>
+  <div class="btns"><a class="p" href="#quickstart">Start</a><a class="s" href="https://app.townhallfc.xyz">See the live demo</a></div>
+</header>
+
+<section id="quickstart" class="qs">
+  <ol class="stepper">
+    <li>
+      <div class="sh"><span class="n">0</span><h3>Get a server</h3><span class="where">your computer</span><span class="dur">~3 min</span></div>
+      <pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
+      <p>Creates a Hetzner server with a 1 TB disk and prints its IP. You need a <a href="#before">Hetzner API token</a>.</p>
+    </li>
+    <li>
+      <div class="sh"><span class="n">1</span><h3>Start the node</h3><span class="where">on the server</span><span class="dur">~2 min, then syncs overnight</span></div>
+      <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
+      <p>Runs Snapchain's official read node. It downloads the network (about 445 GB) and catches up on its own.</p>
+    </li>
+    <li>
+      <div class="sh"><span class="n">2</span><h3>Open your client</h3><span class="where">on the server</span><span class="dur">~3 min</span></div>
+      <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'</code></pre>
+      <p>Builds the client from this repo and serves it over HTTPS. Open the address it prints.</p>
+    </li>
+  </ol>
+  <div class="timeline" aria-label="Timeline of the demo node">
+    <div><b>Tonight</b><span>10 min of commands</span></div>
+    <div class="bar"><span style="flex:11">snapshot · ~11 h</span><span style="flex:10">catching up · ~10 h</span></div>
+    <div><b>Tomorrow</b><span>in sync, post from your node</span></div>
+  </div>
+  <p class="small">Measured on the <a href="https://app.townhallfc.xyz">demo node</a>, October 2026. Already have a server (Ubuntu, 4 vCPU, 16 GB RAM, 1 TB disk)? Skip step 0. Done testing? <a href="#cost">One command deletes everything.</a></p>
+</section>
+
+<div class="layout">
+<aside class="toc" id="guide">
+  <b>Guide</b>
+  <a href="#what">What you get</a><a href="#expect">Measured numbers</a><a href="#before">Before you start</a>
+  <a href="#step0">Step 0 · Server</a><a href="#step1">Step 1 · Node</a><a href="#step2">Step 2 · Client</a>
+  <a href="#use">Using the client</a><a href="#concepts">Concepts</a><a href="#writes">How a cast travels</a>
+  <a href="#security">Security</a><a href="#broke">What broke</a><a href="#trouble">Troubleshooting</a>
+  <a href="#cost">Cost &amp; cleanup</a><a href="#testers">For testers</a>
+</aside>
 <main>
-
-<div class="hero">
-<h1>townhall</h1>
-<p class="tag">No app can ban you.</p>
-<p class="sub">No app between you and Farcaster: your own client and Snapchain read node, in three commands.</p>
-<div class="btns"><a class="p" href="#quickstart">Run your own</a><a class="s" href="https://app.townhallfc.xyz">Open the live demo</a></div>
-<p class="small" style="margin-top:12px">The demo is the author's own node and client, running from these exact scripts.</p>
-</div>
-
-<h2 id="quickstart">Quickstart</h2>
-<p>From your computer, with a <a href="#before">Hetzner Cloud API token</a>:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/provision.sh | HCLOUD_TOKEN=your_token bash</code></pre>
-<p>It prints your server's IP. Then:</p>
-<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
-<pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/client.sh | bash'</code></pre>
-<p>Open the <code>https://…sslip.io</code> address the last command prints. The client shows your node's progress in the top bar. Done testing? One more command deletes the server and the volume so billing stops:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.sh | HCLOUD_TOKEN=your_token bash</code></pre>
-
-<h3 id="expect">What to expect, measured</h3>
-<p>From the demo node: Hetzner <code>cx43</code> (8 vCPU, 16 GB) in Falkenstein with a 1 TB volume, October 2026, Snapchain 0.14.3.</p>
-<table>
-  <tr><th></th><th>Measured</th></tr>
-  <tr><td>Hands-on time</td><td>About 10 minutes</td></tr>
-  <tr><td>Snapshot download and unpack</td><td>About 11 hours. The snapshot is about 5,700 chunks, roughly 445 GB compressed.</td></tr>
-  <tr><td>Catching up after the snapshot</td><td>About 10 hours. The node replays the blocks made since the snapshot, around 290 blocks a minute faster than the chain grows.</td></tr>
-  <tr><td>From <code>node.sh</code> to in sync</td><td>Under 22 hours. Start in the evening, use it the next afternoon.</td></tr>
-  <tr><td>Disk</td><td>Peak about 800 GB while unpacking. About 560 GB once synced: 914 million messages from 3.36 million FIDs.</td></tr>
-  <tr><td>Adding the app key</td><td>One <code>KEY_ADD</code>, active about 10 seconds later. No gas.</td></tr>
-</table>
-<div class="note">Already have a server (any provider, Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 2 TB disk)? Skip the first command and run the other two on it.</div>
-<p class="small">Prefer to read before you run? Every script is short and commented: <a href="https://github.com/townhall-fc/townhall/tree/main/install">install/</a>. The client is built from source on your server, so what runs is what is in the repo.</p>
-
-<figure class="shotwrap"><img src="img/app-feed.webp" width="390" height="844" alt="townhall on a phone: home feed read from your own node, with a cast being written"><figcaption>The client. Screenshot from the test build; live screens coming once the demo node is synced.</figcaption></figure>
 
 <h2 id="what">What you get</h2>
 <div class="scroll"><svg class="diagram" viewBox="0 0 720 315" role="img" aria-label="Your browser talks only to your server. Your server runs the client and a Snapchain read node. The read node syncs blocks from the network and relays your messages to validators. FIDs live on Optimism; app keys are added with a signed message, no transaction.">
@@ -138,6 +178,18 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <li><b>Your own app key.</b> The client signs with a key that belongs to you and that you added to your account yourself. Nobody in the middle can post for you, hide your feed or block your writes, as long as your node is up.</li>
 </ul>
 
+<h2 id="expect">Measured numbers</h2>
+<p>From the demo node: Hetzner <code>cx43</code> (8 vCPU, 16 GB) in Falkenstein with a 1 TB volume, October 2026, Snapchain 0.14.3.</p>
+<table>
+  <tr><th></th><th>Measured</th></tr>
+  <tr><td>Hands-on time</td><td>About 10 minutes</td></tr>
+  <tr><td>Snapshot download and unpack</td><td>About 11 hours. The snapshot is about 5,700 chunks, roughly 445 GB compressed.</td></tr>
+  <tr><td>Catching up after the snapshot</td><td>About 10 hours. The node replays the blocks made since the snapshot, around 290 blocks a minute faster than the chain grows.</td></tr>
+  <tr><td>From <code>node.sh</code> to in sync</td><td>Under 22 hours. Start in the evening, use it the next afternoon.</td></tr>
+  <tr><td>Disk</td><td>Peak about 800 GB while unpacking. About 560 GB once synced: 914 million messages from 3.36 million FIDs.</td></tr>
+  <tr><td>Adding the app key</td><td>One <code>KEY_ADD</code>, active about 10 seconds later. No gas.</td></tr>
+</table>
+
 <h2 id="before">Before you start</h2>
 <table>
   <tr><th>You need</th><th>Why</th><th>How</th></tr>
@@ -154,7 +206,7 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
   <li>Uses your SSH key (<code>~/.ssh/id_ed25519.pub</code>, created if missing) and uploads it to Hetzner, so only you can log in.</li>
   <li>Picks the cheapest server type in the location with at least 4 vCPU and 16 GB RAM.</li>
   <li>Creates a firewall that only opens SSH (22), HTTP/HTTPS for your client (80, 443) and UDP 3382, the port Snapchain nodes use to talk to each other.</li>
-  <li>Creates the server with Ubuntu 24.04 and attaches a 2,000 GB volume for the node's data.</li>
+  <li>Creates the server with Ubuntu 24.04 and attaches a volume for the node's data: 2 TB if your account allows it, otherwise the largest it allows. 1 TB is enough (see <a href="#expect">measured</a>).</li>
   <li>Waits until it can SSH in, then prints the next two commands with your IP filled in.</li>
 </ol>
 <p class="small">Options: <code>LOCATION=nbg1</code>, <code>SERVER_TYPE=…</code>, <code>VOLUME_GB=…</code>. A server is billed while it exists, see <a href="#cost">cost &amp; cleanup</a>.</p>
@@ -163,14 +215,18 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <pre><code>ssh root@YOUR_IP 'curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash'</code></pre>
 <ol>
   <li>Installs Docker.</li>
-  <li>Finds the disk with the most free space (your 2 TB volume) and puts the node there.</li>
+  <li>Finds the disk with the most free space (your volume) and puts the node there.</li>
   <li>Downloads the <b>official</b> <code>docker-compose.mainnet.yml</code> and <code>validators.toml</code> from the latest <a href="https://github.com/farcasterxyz/snapchain/releases">Snapchain release</a>, unchanged. That file already configures a read node (<code>read_node = true</code>).</li>
   <li>Starts the node. It first downloads a snapshot of the network, then replays recent blocks from peers until it catches up.</li>
-  <li>Starts a small <b>snapshot guard</b>. On first start the node keeps every downloaded snapshot file until the very end, which is why the docs ask for 2 TB. The guard deletes each file as soon as the node has finished with it, so the first sync should peak around 850 GB instead of about 1.5 TB (our estimate from the snapshot sizes in October 2026). It stops by itself when the sync is done.</li>
+  <li>Starts a small <b>snapshot guard</b>. On first start the node keeps every downloaded snapshot file until the very end, which is why the docs ask for 2 TB. The guard deletes each file as soon as the node has finished with it, so the first sync peaked at about 800 GB on the demo node instead of about 1.5 TB. It stops by itself when the sync is done.</li>
   <li>Installs <code>townhall-status</code>, a one-word command that shows how far behind each shard is.</li>
 </ol>
-<!-- REAL_STATUS_OUTPUT: paste output from the live run here -->
-<p>It prints one line per shard with its height and how many blocks it is behind. The node is in sync when every shard is within a few blocks.</p>
+<pre><code>$ ssh root@YOUR_IP townhall-status
+shard 0: height 48485756  blocks behind: 1
+shard 1: height 49161526  blocks behind: 0
+shard 2: height 48996914  blocks behind: 1
+In sync when every 'blocks behind' is in the single digits.</code></pre>
+<p>That is the demo node once synced. While it is still catching up, "blocks behind" counts down; on the demo node it took about 10 hours from tens of thousands to single digits.</p>
 <p>The node answers on port 3381 with Snapchain's HTTP API. Try it on the server: <code>curl -s localhost:3381/v1/castsByFid?fid=1 | jq '.messages[0].data.castAddBody.text'</code></p>
 
 <h2 id="step2">Step 2 · Create your client</h2>
@@ -299,10 +355,11 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 </ol>
 <p class="small">Never send your recovery phrase or Hetzner token to anyone, the author included. If you were reimbursed for server costs or your time, say so in your post.</p>
 
+</main>
+</div>
 <footer>
   MIT licensed · <a href="https://github.com/townhall-fc/townhall">github.com/townhall-fc/townhall</a> · Built on the open Farcaster protocol and Snapchain. Sources: <a href="https://docs.farcaster.xyz/learn/architecture/overview">architecture</a>, <a href="https://snapchain.farcaster.xyz/guides/running-a-node">running a node</a>, <a href="https://docs.neynar.com/snapchain/httpapi/httpapi">HTTP API</a>.
 </footer>
-</main>
 <script>
 document.querySelectorAll('pre').forEach(function (pre) {
   var b = document.createElement('button'); b.className = 'copy'; b.textContent = 'copy';
