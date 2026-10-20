@@ -114,6 +114,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
 .ostabs button{font:inherit;font-size:13px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer}
 .ostabs button.on{color:var(--fg);border-color:color-mix(in srgb,var(--fg) 35%,transparent)}
 .os pre[data-os]{display:none}.os[data-on=unix] pre[data-os=unix],.os[data-on=win] pre[data-os=win]{display:block}
+.faq{margin:12px 0 0}.faq dt{font-weight:600;margin:20px 0 6px;font-size:17px}.faq dd{margin:0;color:var(--fg);max-width:66ch}
 .qsh{margin:0 0 14px}
 .proof{max-width:860px;margin:0 auto;padding:8px 24px 24px}
 .proof h2{margin:0 0 6px}
@@ -206,7 +207,7 @@ td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhe
   <a href="#what">你会得到什么</a><a href="#expect">实测数据</a><a href="#before">开始之前</a>
   <a href="#step0">第 0 步 · 服务器</a><a href="#step1">第 1 步 · 节点</a><a href="#step2">第 2 步 · 客户端</a>
   <a href="#use">使用客户端</a><a href="#signin">免助记词登录</a><a href="#concepts">核心概念</a><a href="#writes">一条 cast 的旅程</a>
-  <a href="#security">安全</a><a href="#broke">踩过的坑</a><a href="#trouble">故障排查</a>
+  <a href="#security">安全</a><a href="#broke">踩过的坑</a><a href="#faq">常见问题</a><a href="#trouble">故障排查</a>
   <a href="#cost">费用与清理</a><a href="#testers">给测试者</a>
 </aside>
 <main>
@@ -385,6 +386,33 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li><b>助记词混淆。</b>Farcaster 应用里有两个助记词：账号的恢复助记词和钱包的助记词。只有账号的那个拥有你的 FID；客户端会在签名之前显示托管地址和 FID，方便你分辨。</li>
 </ul>
 
+<h2 id="faq">常见问题</h2>
+<dl class="faq">
+  <dt>我的助记词会被发到哪里？</dt>
+  <dd>哪里都不会。它在你的浏览器里推导出 custody 地址、签署密钥授权，然后从页面清除。经过网络的只有：你的 custody <i>地址</i>（不是助记词），发给公共 Optimism RPC 用来查询 FID；以及一条发给你节点的 <code>KEY_ADD</code> 消息，里面是新的公钥和签名，也就是全网都能看到的数据。可以在 <a href="https://github.com/townhall-fc/townhall/blob/main/client/src/keys.ts"><code>client/src/keys.ts</code></a> 里核对。</dd>
+
+  <dt>那安全吗？</dt>
+  <dd>助记词不会离开浏览器，但有两个真实风险。提供页面的人可以改它的代码：在你自己的节点上就是你自己，从这个开源仓库构建；在别人的 townhall 上就是对方。另外，被入侵的电脑或恶意浏览器扩展能读到你输入的任何内容。所以建议用测试账号，或者<a href="#signin">通过 Farcaster 应用登录</a>，那样完全不用输入助记词。</dd>
+
+  <dt>应该用哪个账号？</dt>
+  <dd>在客户端里用一个有存储空间的备用账号：你粘贴的就是它的助记词。如果你在帮别人测试这个教程，请用你的主账号发布测试报告：报告的分量来自你的名字。</dd>
+
+  <dt>如果有人拿到了应用密钥，能做什么？</dt>
+  <dd>以该账号签署 cast、反应、关注和资料修改，直到你撤销它（设置 → Revoke），或者 90 天不用后自动过期。它不能转移你的 FID、更改 custody 地址或添加其他密钥。</dd>
+
+  <dt>每个人都需要自己的服务器吗？</dt>
+  <dd>不需要。一个节点可以服务整个社区：大家打开 townhall 登录即可，什么都不用运行。三条命令是给想要自己副本的人：社区、开发者、任何不应依赖单一运营者的人。正因为谁都可以这样做，才没有哪个应用能决定谁的声音被听到。</dd>
+
+  <dt>Snapchain 文档要求 2 TB，为什么 1 TB 就够？</dt>
+  <dd>网络本身大约 560 GB。多出来的空间是给首次同步用的：节点会把下载的每个快照文件留到最后；<a href="#step1">快照守护</a>在每个文件用完后立即删除，所以演示节点的峰值约 800 GB。如果要长期运行，请随网络增长扩容磁盘。</dd>
+
+  <dt>可以在 Windows 上运行吗？</dt>
+  <dd>可以。使用 PowerShell：第 0 步和清理命令有 Windows 版本（命令上方的 Windows 标签），第 1、2 步可直接运行。</dd>
+
+  <dt>要花多少钱，怎么停止计费？</dt>
+  <dd>演示节点最初 12 小时花费约 2 美元。服务器和磁盘存在期间 Hetzner 按小时计费；<a href="#cost">清理命令</a>会把两者都删除。</dd>
+</dl>
+
 <h2 id="trouble">故障排查</h2>
 <table>
   <tr><th>你看到</th><th>这样做</th></tr>
@@ -410,12 +438,13 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
 <h2 id="testers">在帮别人测试这个教程？</h2>
 <p>谢谢你。有用的测试报告是诚实的，包括失败的地方。请：</p>
 <ol class="steps">
-  <li>使用一个有存储的 Farcaster <b>测试</b>账号，不要用对你重要的账号。</li>
+  <li>用你的主账号发布报告；在客户端里使用备用账号。</li>
+  <li>在客户端里使用一个有存储的 Farcaster <b>测试</b>账号，不要用对你重要的账号。</li>
   <li>在一台干净的机器上运行这三条命令，并记录时间。</li>
   <li>等客户端显示节点已同步后：发一条 cast、关注一个人、点一个赞，并用筛选隐藏某个应用的 cast。</li>
   <li>也在手机上打开看看。</li>
   <li>运行清理命令（<code>destroy.sh</code>，Windows 上是 <code>destroy.ps1</code>），停止计费。</li>
-  <li>在 Farcaster 上发帖说明过程，好的坏的都写，以及花了多长时间。</li>
+  <li>用你的主账号在 Farcaster 上发帖说明过程，好的坏的都写，以及花了多长时间。</li>
 </ol>
 <p class="small">永远不要把你的助记词或 Hetzner 令牌发给任何人，包括作者本人。如果你的服务器费用或时间得到了报销，请在帖子里注明。</p>
 
