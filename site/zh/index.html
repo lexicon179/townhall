@@ -106,9 +106,25 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 .toc{position:sticky;top:70px;align-self:start;display:flex;flex-direction:column;gap:2px;padding-top:56px;font-size:14px}
 .toc b{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .toc a{color:var(--muted);text-decoration:none;padding:4px 0}.toc a:hover{color:var(--fg)}
-@media (max-width:900px){.layout{grid-template-columns:1fr;gap:0}.toc{position:static;padding-top:24px;flex-direction:row;flex-wrap:wrap;gap:6px 14px}.toc b{width:100%}}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:0}.toc{position:static;padding-top:24px;flex-direction:row;flex-wrap:wrap;gap:6px 14px}.toc b{width:100%}}
 @media (max-width:600px){.timeline{grid-template-columns:1fr}.stepper .dur{margin-left:0}.hero{padding-top:44px}}
 footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
+td code,p code,li code,dd code{overflow-wrap:anywhere}td,th{overflow-wrap:anywhere}
+.proof{max-width:860px;margin:0 auto;padding:40px 24px 8px}
+.proof h2{margin:0 0 6px}
+.shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 0}
+.shots figure{margin:0}
+.shots a{display:block;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.shots a:hover{border-color:color-mix(in srgb,var(--fg) 30%,transparent)}
+.shots img{display:block;width:100%;height:auto;aspect-ratio:800/960;object-fit:cover;object-position:top}
+.shots figcaption{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.wish{margin:26px 0 0;border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--card)}
+.wish h3{margin:0 0 4px;font-size:17px;font-weight:500}
+.wish ol{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.wish li{display:grid;grid-template-columns:1.2em 1fr;gap:8px;max-width:none;font-size:15px}
+.wish li::before{content:"✓";color:var(--accent);font-weight:600}
+.wish li span{color:var(--muted)}
+@media (max-width:720px){.shots{grid-template-columns:1fr 1fr}.shots figure:last-child{display:none}}
 :lang(zh) .hero h1{font-size:clamp(28px,7.4vw,64px);letter-spacing:0}
 :lang(zh) .stepper .where,:lang(zh) .stepper .dur{font-family:inherit;letter-spacing:0}
 </style>
@@ -153,6 +169,28 @@ footer{max-width:1120px;margin:0 auto;padding:16px 24px 40px}
     <div><b>明天</b><span>同步完成，从你的节点发帖</span></div>
   </div>
   <p class="small">数据来自 2026 年 10 月的<a href="https://app.townhallfc.xyz">演示节点</a>。已经有服务器（Ubuntu、4 vCPU、16 GB 内存、1 TB 磁盘）？跳过第 0 步。测试完了？<a href="#cost">一条命令删除全部资源。</a></p>
+</section>
+
+<section id="proof" class="proof">
+  <h2>真实的 cast，读自演示节点</h2>
+  <p class="small">演示客户端在手机上的截图，2026 年 10 月。每条 cast、回复和头像都来自节点，而不是 API。点击可打开实时页面。</p>
+  <div class="shots">
+    <figure><a href="https://app.townhallfc.xyz/#/c/3/0x597007de6219f87fdf71ad5769db542c8f2d1dde"><img src="../img/cast-dwr.webp" alt="Dan Romero 的客户端愿望清单及他的后续回复" width="800" height="1130" loading="lazy"></a><figcaption>@dwr 的客户端愿望清单，以及他自己的补充。</figcaption></figure>
+    <figure><a href="https://app.townhallfc.xyz/#/c/5650/0x9252885364ac7db01ac427e97dd246b7af619949"><img src="../img/cast-vitalik.webp" alt="Vitalik Buterin 带两张表格图片和回复的 cast" width="800" height="1050" loading="lazy"></a><figcaption>@vitalik.eth：图片与回复。</figcaption></figure>
+    <figure><a href="https://app.townhallfc.xyz/#/c/129/0xa9c0dfd6c4b17ea8ac6f0a71aaa644fb41e0ef5c"><img src="../img/cast-phil.webp" alt="Phil 宣布关闭一个应用，以及回复" width="800" height="960" loading="lazy"></a><figcaption>@phil 关闭了一个应用。应用来来去去，账号和 cast 留在网络上。</figcaption></figure>
+  </div>
+  <div class="wish">
+    <h3>Dan Romero 的客户端愿望清单，10 月 16 日</h3>
+    <p class="small">清单中 townhall 已经做到的：</p>
+    <ol>
+      <li><div>只显示互关者的通知 <span>· 回复页默认只显示互关者，可切换为所有人</span></div></li>
+      <li><div>没有频道</div></li>
+      <li><div>没有钱包</div></li>
+      <li><div>只含关注者、按时间倒序的信息流 <span>· 即首页信息流</span></div></li>
+      <li><div>没有小程序</div></li>
+      <li><div>没有私信</div></li>
+    </ol>
+  </div>
 </section>
 
 <div class="layout">
