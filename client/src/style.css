@@ -5,7 +5,7 @@
   you have done (your likes, your follows). Everything else is ink on paper.
 */
 :root {
-  /* Obsidian and lime. Dark is the face of the brand; light follows the system. */
+  /* Obsidian and lime. Dark by default (the face of the brand); the toggle in the top bar switches to light. */
   --paper: #0d0d0f;
   --surface: #141416;
   --ink: #f2f2ee;
@@ -20,12 +20,12 @@
   font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   color-scheme: dark;
 }
-@media (prefers-color-scheme: light) {
-  :root {
+:root[data-theme="light"] {
     --paper: #f2f2ee; --surface: #fafaf7; --ink: #0d0d0f; --muted: #6e6e6a; --hair: #dcdcd6;
     --signal: #4f7a00; --on-signal: #f2f2ee; --warn: #9a5b00; --bad: #b3261e; color-scheme: light;
-  }
+  
 }
+
 code, .mono, .node { font-family: 'Geist Mono Variable', ui-monospace, monospace; }
 
 * { box-sizing: border-box; }
@@ -182,3 +182,7 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .adv { border-top: 1px solid var(--hair); padding: 18px 0; }
 .adv summary { cursor: pointer; color: var(--muted, inherit); }
 .adv .option { border-top: 0; padding-bottom: 0; }
+
+.theme { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; display: grid; place-items: center; }
+.theme:hover { color: var(--ink); }
+.theme svg { width: 18px; height: 18px; }

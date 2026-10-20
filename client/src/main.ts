@@ -498,6 +498,13 @@ async function route() {
   }
 }
 
+document.getElementById('theme')!.addEventListener('click', () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('theme', r.dataset.theme); } catch { /* private mode */ }
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', r.dataset.theme === 'light' ? '#f2f2ee' : '#0d0d0f');
+});
+
 window.addEventListener('hashchange', route);
 nodeStatus();
 setInterval(nodeStatus, 15000);
