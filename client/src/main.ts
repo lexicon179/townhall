@@ -8,6 +8,7 @@ import { voted } from './votes';
 import { loadKey, saveKey, forgetKey, inspectSeed, addAppKey, revokeKey, type Stored } from './keys';
 import { loadConfig, startSignin, resumeSignin, dropPending, waitSignin, qrSvg, isMobile, type Config, type Pending } from './signin';
 import { cast, react, follow, deleteCast } from './msg';
+import { viewLive, stopLive } from './live';
 
 const $view = document.getElementById('view')!;
 const $node = document.getElementById('node')!;
@@ -97,9 +98,9 @@ async function nodeStatus() {
 
 async function renderMe() {
   const f = myFid();
-  if (!f) { $me.innerHTML = cfg.signin || cfg.defaultFid ? '<a href="#/search">Search</a><a class="btn primary sm" href="#/setup">Sign in</a>' : ''; return; }
+  if (!f) { $me.innerHTML = cfg.signin || cfg.defaultFid ? '<a href="#/live">Live</a><a href="#/search">Search</a><a class="btn primary sm" href="#/setup">Sign in</a>' : ''; return; }
   const p = await profile(f);
-  $me.innerHTML = `<a href="#/search" aria-label="Search">Search</a><a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
+  $me.innerHTML = `<a href="#/live">Live</a><a href="#/search" aria-label="Search">Search</a><a href="#/u/${f}">@${esc(p.username || String(f))}</a>${key ? '' : '<span class="muted">reading only</span>'}<a href="#/n">Replies</a><a href="#/settings">Settings</a>`;
 }
 
 // ---------- cast rendering ----------
@@ -535,7 +536,9 @@ function viewSettings() {
 
 async function route() {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
+  stopLive();
   try {
+    if (parts[0] === 'live') return await viewLive($view);
     if (parts[0] === 'u' && parts[1]) {
       const fid = /^\d+$/.test(parts[1]) ? Number(parts[1]) : await fidByName(decodeURIComponent(parts[1]));
       if (!fid) { $view.innerHTML = `<div class="center">No account named ${esc(decodeURIComponent(parts[1]))} on your node.</div>`; return; }

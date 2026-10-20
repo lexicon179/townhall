@@ -111,6 +111,16 @@ await p.goto('http://localhost:3999/#/search/nobody-here');
 await p.waitForFunction(() => document.querySelector('.err')?.textContent.includes('No account'), null, { timeout: 10000 });
 ok('unknown username says so', true);
 
+// live view: the network's event log, as the node receives it
+await p.goto('http://localhost:3999/#/live');
+await p.waitForSelector('.stream .ev', { timeout: 15000 });
+ok(`live view lists network messages (${await p.locator('.stream .ev').count()})`, await p.locator('.stream .ev').count() > 3);
+ok('live view shows block heights and stored messages', /\d/.test(await p.textContent('[data-k=s1]')) && /\d/.test(await p.textContent('[data-k=msgs]')));
+await fetch('http://localhost:3999/test/live-cast');
+await p.waitForFunction(() => [...document.querySelectorAll('.stream .txt')].some((e) => e.textContent.includes('hello from the live network')), null, { timeout: 15000 });
+ok('a new cast appears live without reloading', true);
+await p.screenshot({ path: `${S}/sc-live.png`, fullPage: true });
+
 // revoke the key on the network (self-signed KEY_REMOVE)
 await p.goto('http://localhost:3999/#/settings');
 const pubBefore = await p.evaluate(() => JSON.parse(localStorage.getItem('appKey')).pub);

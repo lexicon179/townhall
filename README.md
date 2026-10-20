@@ -48,6 +48,9 @@ Measured on the demo node (Hetzner `cx43`, 1 TB volume, Snapchain 0.14.3, Octobe
 - Adds that key from your recovery phrase as a gasless `KEY_ADD` (custody-signed EIP-712, no transaction, no ETH). The phrase is used only in the browser and cleared right after. The key can revoke itself from Settings.
 - Shows which app signed each cast and lets you include or exclude casts by app.
 - **Voters only:** filters the feed to people who hold the Farcaster VOTE NFT on Base.
+- **Live:** the whole network as your node receives it, from the node's event log: casts, likes, follows, profile changes, messages pruned by storage limits, with block heights per shard.
+- **Inspect:** every cast can show its protocol message (hash, signer, signing app, signature).
+- Search by username or FID; follower and following counts read from your node.
 - **Replies from mutuals:** replies and mentions from people you follow who follow you back, with a switch for everyone.
 - Writes go to your read node, which validates them and relays them to the validators.
 

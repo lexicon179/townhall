@@ -180,3 +180,9 @@ export async function linkCount(dir: 'following' | 'followers', fid: number, cap
   } while (pageToken && n < cap);
   return { n, more: !!pageToken };
 }
+
+/** The node's event log for one shard, newest first: merged messages, pruned messages, confirmed blocks. */
+export async function recentEvents(shard: number, pageSize = 200): Promise<any[]> {
+  const r = await get<any>('events', { shard_index: shard, reverse: true, pageSize });
+  return r.events ?? [];
+}

@@ -110,7 +110,12 @@ async function merge(m) {
   if (t === MessageType.REACTION_REMOVE || t === MessageType.REACTION_ADD) { const b = m.data.reactionBody; drop((x) => x.data.fid === m.data.fid && x.data.reactionBody && x.data.reactionBody.type === b.type && hex(x.data.reactionBody.targetCastId.hash) === hex(b.targetCastId.hash)); }
   if (t === MessageType.LINK_REMOVE || t === MessageType.LINK_ADD) { drop((x) => x.data.fid === m.data.fid && x.data.linkBody && x.data.linkBody.targetFid === m.data.linkBody.targetFid); }
   if ([MessageType.CAST_ADD, MessageType.CAST_REMOVE, MessageType.REACTION_ADD, MessageType.LINK_ADD, MessageType.USER_DATA_ADD].includes(t)) msgs.push(m);
+  logEvent(m);
 }
+// ---------- event log (/v1/events), like the node's: one entry per merged message ----------
+const events = []; let evId = 1000;
+const logEvent = (m, type = 'HUB_EVENT_TYPE_MERGE_MESSAGE') => events.push({ type, id: ++evId, shardIndex: m.data.fid % 2 ? 1 : 2,
+  ...(type === 'HUB_EVENT_TYPE_MERGE_MESSAGE' ? { mergeMessageBody: { message: toJson(m), deletedMessages: [] } } : { pruneMessageBody: { message: toJson(m) } }) });
 const drop = (f) => { for (let i = msgs.length - 1; i >= 0; i--) if (f(msgs[i])) msgs.splice(i, 1); };
 
 // ---------- seed: two other users posting from a different app ----------
@@ -135,6 +140,7 @@ async function seed() {
   await mk(4242, 'mike', 'Mike', []); // the test user's profile (written by their old app)
   msgs.push((await makeLinkAdd({ type: 'follow', targetFid: 200 }, { fid: 100, network: FarcasterNetwork.MAINNET }, seedSigners.get(100)))._unsafeUnwrap()); // alice follows bob (the signed-out feed)
   names.set('mike', 4242);
+  for (const m of msgs) logEvent(m);
 }
 
 // ---------- HTTP ----------
@@ -143,7 +149,10 @@ const page = (arr, p) => { let a = [...arr]; if (p.reverse === 'true') a.reverse
 const of = (type, fid) => msgs.filter((m) => m.data.type === type && (fid === undefined || m.data.fid === Number(fid)));
 
 const routes = {
-  '/v1/info': () => ({ shardInfos: [{ shardId: 0, blockDelay: 0 }, { shardId: 1, blockDelay: 0 }, { shardId: 2, blockDelay: 0 }] }),
+  '/v1/info': () => ({ dbStats: { numMessages: msgs.length, numFidRegistrations: 4 }, shardInfos: [0, 1, 2].map((shardId) => ({ shardId, blockDelay: 0, maxHeight: 1000 + evId })) }),
+  '/v1/events': (p) => { let e = events.filter((x) => x.shardIndex === Number(p.shard_index)); if (p.reverse === 'true') e = [...e].reverse(); return { events: e.slice(0, Number(p.pageSize || 100)) }; },
+  // test helper: someone casts while the Live view is open
+  '/test/live-cast': async () => { const m = (await makeCastAdd({ text: 'hello from the live network', embeds: [], embedsDeprecated: [], mentions: [], mentionsPositions: [], type: 0 }, { fid: 100, network: FarcasterNetwork.MAINNET }, seedSigners.get(100)))._unsafeUnwrap(); msgs.push(m); logEvent(m); return { ok: true }; },
   // like the real node, castsByFid also returns CAST_REMOVE messages
   '/v1/castsByFid': (p) => ({ messages: page(msgs.filter((m) => [MessageType.CAST_ADD, MessageType.CAST_REMOVE].includes(m.data.type) && m.data.fid === Number(p.fid)), p).map(toJson) }),
   '/v1/castById': (p) => { const m = of(MessageType.CAST_ADD, p.fid).find((x) => hex(x.hash) === p.hash); if (!m) throw 404; return toJson(m); },

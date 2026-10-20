@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Live view: the network's event log as your node receives it.
+- Inspect a cast's protocol message.
+- Search by username or FID; follower and following counts; Farcaster-style relative times.
+- Fix: deleted casts (CAST_REMOVE) no longer break the feed.
+
 ## 0.1.0 · 2026-10-20
 
 First public version.
