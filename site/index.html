@@ -196,6 +196,13 @@ footer{margin-top:70px;font-size:14px;color:var(--muted);border-top:1px solid va
 <h3>Include or exclude casts by app</h3>
 <p>Every cast is signed by an app key, and every app key records which app requested it (the app's own FID). The client looks this up on your node for each author and shows it as <i>via farcaster</i>, <i>via own key</i> and so on. Tap an app in the bar above the feed to hide or show its casts. Your choice is remembered in this browser.</p>
 
+<h3>Live: the network as your node sees it</h3>
+<p><b>Live</b> shows every message the network accepts, a second or two after your node receives it: casts, likes, follows, profile changes, and messages pruned when someone goes over their storage limit. It reads your node's event log (<code>/v1/events</code>, one log per shard) and its block heights (<code>/v1/info</code>). Nothing here comes from anyone else's server.</p>
+<h3>Inspect a cast</h3>
+<p>Tap <code>{ }</code> under any cast to see the protocol message behind it: its BLAKE3 hash, the Ed25519 key that signed it, which app requested that key, and a link to the raw JSON on your node. Your node stored the cast only after checking all three.</p>
+<h3>Search</h3>
+<p>Type a username or an FID. Your node resolves names with <code>/v1/userNameProofByName</code>; follower and following counts come from its link store.</p>
+
 <h3>Voters only</h3>
 <p>People who accepted the social contract in the Farcaster network vote hold a VOTE NFT on Base whose token id is their FID (<a href="https://basescan.org/address/0x4ecfed276c566aeb49da1f3a888e8dbb7263028d">contract</a>). The client asks Base directly, <code>ownerOf(fid)</code>, and marks those authors <i>voted</i>. Turn on <b>Voters only</b> for a feed of people who showed up. Declining minted nothing, so only "yes" is visible onchain.</p>
 <h3>Replies, from mutuals</h3>
