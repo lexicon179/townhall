@@ -1,6 +1,4 @@
 import './polyfill';
-import '@fontsource-variable/geist';
-import '@fontsource-variable/geist-mono';
 import './style.css';
 import {
   info, castsByFid, castsByParent, following, followers, castsByMention, profile, fidByName, appOfCast,

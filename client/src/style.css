@@ -1,3 +1,6 @@
+@font-face { font-family: 'Fira Sans'; src: url(/fonts/fira-400.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Fira Sans'; src: url(/fonts/fira-500.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Fira Sans'; src: url(/fonts/fira-600.woff2) format('woff2'); font-weight: 600 800; font-display: swap; }
 /*
   townhall · visual system
   One idea: the network arrives through *your* node. The only colour in the
@@ -17,7 +20,7 @@
   --bad: #ff7a6b;
   --r-s: 8px;
   --r-l: 18px;
-  font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -26,7 +29,8 @@
   
 }
 
-code, .mono, .node { font-family: 'Geist Mono Variable', ui-monospace, monospace; }
+@font-face { font-family: 'Fira Mono'; src: url(/fonts/fira-mono.woff2) format('woff2'); font-display: swap; }
+code, .mono, .node { font-family: 'Fira Mono', ui-monospace, monospace; }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -45,9 +49,9 @@ button, input, textarea { font: inherit; color: inherit; }
   backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--hair);
 }
-.brand { font-weight: 650; font-size: 19px; letter-spacing: -0.035em; text-decoration: none; display: inline-flex; align-items: center; gap: 9px; }
+.brand { font-weight: 500; font-size: 14px; letter-spacing: 0.38em; text-transform: uppercase; text-decoration: none; display: inline-flex; align-items: center; gap: 9px; }
 .brand svg { width: 28px; height: 28px; border-radius: 7px; flex: none; }
-.node { font-size: 13.5px; color: var(--muted); display: flex; align-items: center; gap: 7px; order: 3; flex-basis: 100%; }
+.node { font-size: 13.5px; color: var(--muted); display: flex; align-items: center; gap: 7px; order: 3; flex: 1 1 calc(100% - 60px); }
 .node b { color: var(--ink); font-weight: 600; }
 .node::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
 .node.ok::before { background: var(--signal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 18%, transparent); }
@@ -72,7 +76,7 @@ main { max-width: 620px; margin: 0 auto; padding: 0 18px 96px; }
 
 /* ---------- setup ---------- */
 .hero { padding: 44px 0 10px; }
-.hero h1 { font-size: clamp(34px, 8.5vw, 52px); line-height: 1.02; letter-spacing: -0.045em; font-weight: 760; margin: 0 0 16px; max-width: 13ch; }
+.hero h1 { font-size: clamp(30px, 7vw, 40px); line-height: 1.15; letter-spacing: 0; font-weight: 500; margin: 0 0 12px; max-width: 18ch; }
 .hero p { color: var(--muted); font-size: 17px; max-width: 46ch; margin: 0; }
 .option { padding: 28px 0; border-top: 1px solid var(--hair); }
 .option:first-of-type { margin-top: 24px; }
@@ -183,6 +187,6 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .adv summary { cursor: pointer; color: var(--muted, inherit); }
 .adv .option { border-top: 0; padding-bottom: 0; }
 
-.theme { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; display: grid; place-items: center; }
+.theme { order: 4; margin-left: auto; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; display: grid; place-items: center; }
 .theme:hover { color: var(--ink); }
 .theme svg { width: 18px; height: 18px; }
