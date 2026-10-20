@@ -79,6 +79,19 @@ $SITES {
 }
 EOF
 
+# 4. Small service for link previews of shared casts (/c/<fid>/<hash>). It is the same
+#    program signin.sh configures; without an app account it only serves previews.
+say "Starting the link-preview service"
+SRV=$APP_DIR/signin-app; DATA=$APP_DIR/signin-data
+$SUDO mkdir -p "$DATA" && $SUDO chmod 700 "$DATA"
+$SUDO rm -rf "$SRV" && $SUDO cp -r "$APP_DIR/src/server" "$SRV"
+$SUDO docker run --rm -v "$SRV:/app" -w /app node:22-alpine npm i --omit=dev --no-audit --no-fund >/dev/null </dev/null
+DEFAULT_FID=$($SUDO cat "$DATA/default-fid" 2>/dev/null || true)
+$SUDO docker rm -f townhall-signin >/dev/null 2>&1 || true
+$SUDO docker run -d --name townhall-signin --restart unless-stopped --network host \
+  -e APP_FILE=/data/app.json -e DEFAULT_FID="$DEFAULT_FID" -e WWW_DIR=/www \
+  -v "$SRV:/app:ro" -v "$DATA:/data" -v "$APP_DIR/www:/www:ro" -w /app node:22-alpine node index.mjs serve >/dev/null </dev/null
+
 say "Starting the web server"
 $SUDO docker rm -f townhall-web >/dev/null 2>&1 || true
 $SUDO docker run -d --name townhall-web --restart unless-stopped --network host \

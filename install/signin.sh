@@ -70,6 +70,7 @@ fi
 say "App account: fid $FID ($ADDR)"
 
 say "Starting the service"
+echo "$DEFAULT_FID" | $SUDO tee "$DATA/default-fid" >/dev/null # client.sh keeps it when it restarts the service
 $SUDO docker rm -f townhall-signin >/dev/null 2>&1 || true
 $SUDO docker run -d --name townhall-signin --restart unless-stopped --network host \
   -e APP_FILE=/data/app.json -e DEFAULT_FID="$DEFAULT_FID" -e WWW_DIR=/www \

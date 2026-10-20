@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Link previews for shared casts on every install: `client.sh` starts the preview service; `signin.sh` adds sign-in to it.
+- Share: "Link copied" confirmation, and a fallback where the clipboard API is blocked.
 - Windows: PowerShell versions of step 0 and cleanup (`provision.ps1`, `destroy.ps1`); the guide shows Mac/Linux and Windows commands.
 - Install scripts name the exact command to install a missing tool (brew, apt or dnf).
 - Live view: the network's event log as your node receives it.

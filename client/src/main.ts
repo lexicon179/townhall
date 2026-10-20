@@ -220,17 +220,39 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
   return el;
 }
 
+/** A short message at the bottom of the screen. */
+function toast(text: string) {
+  document.querySelector('.toast')?.remove();
+  const t = h(`<div class="toast" role="status">${esc(text)}</div>`);
+  document.body.append(t);
+  setTimeout(() => t.remove(), 1800);
+}
+
+async function copyText(text: string): Promise<boolean> {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* fall back below */ }
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.append(ta); ta.select();
+  const ok = document.execCommand('copy');
+  ta.remove();
+  return ok;
+}
+
 /** Link to a cast on this client. Opens for anyone, signed in or not. */
 async function shareCast(c: CastMsg, username: string | undefined, b: HTMLElement) {
   // /c/... links carry a preview of the cast when the server renders them (server/), else a plain hash link.
   const url = cfg.castLinks ? `${location.origin}/c/${c.data.fid}/${c.hash}` : `${location.origin}/#/c/${c.data.fid}/${c.hash}`;
   const text = c.data.castAddBody.text.slice(0, 120);
-  try {
-    if (isMobile() && navigator.share) { await navigator.share({ url, title: `@${username ?? c.data.fid} on Farcaster`, text }); return; }
-    await navigator.clipboard.writeText(url);
-    b.classList.add('on'); b.title = 'Link copied';
-    setTimeout(() => { b.classList.remove('on'); b.title = 'Copy link'; }, 1500);
-  } catch { /* share sheet closed */ }
+  if (isMobile() && navigator.share) {
+    try { await navigator.share({ url, title: `@${username ?? c.data.fid} on Farcaster`, text }); return; }
+    catch (e) { if ((e as Error).name === 'AbortError') return; /* no share sheet: copy instead */ }
+  }
+  if (await copyText(url)) {
+    b.classList.add('on'); toast('Link copied');
+    setTimeout(() => b.classList.remove('on'), 1500);
+  } else {
+    prompt('Copy this link', url);
+  }
 }
 
 function composer(parent?: { fid: number; hash: string }, done?: () => void, quote?: { fid: number; hash: string }) {

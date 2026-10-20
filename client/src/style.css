@@ -238,3 +238,5 @@ input[type=text]:focus, textarea:focus { outline: none; border-color: var(--ink)
 .pick:hover { border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
 .pick.on { border-color: var(--signal); box-shadow: inset 0 0 0 1px var(--signal); }
 @media (max-width: 520px) { .choice { grid-template-columns: 1fr; } }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 50; box-shadow: 0 6px 24px rgb(0 0 0 / 0.3); }

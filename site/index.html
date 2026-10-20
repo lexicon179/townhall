@@ -289,6 +289,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li>Clones this repository and builds the client inside a throwaway Node container.</li>
   <li>Starts <a href="https://caddyserver.com">Caddy</a>, which gets an HTTPS certificate for <code>YOUR-IP.sslip.io</code> (a free wildcard DNS name that points at your IP; set <code>DOMAIN=your.domain</code> to use your own).</li>
   <li>Serves the client and forwards <code>/v1/*</code> to your node. The browser only ever talks to your server: same origin, no CORS, no third-party API.</li>
+  <li>Starts a small service that gives shared casts a link preview: a link like <code>/c/&lt;fid&gt;/&lt;hash&gt;</code> shows the author and text when you paste it into Farcaster or Telegram.</li>
 </ol>
 <p>Re-run the same command any time to update the client.</p>
 

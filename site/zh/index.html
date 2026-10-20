@@ -290,6 +290,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li>克隆本仓库，在一次性的 Node 容器里构建客户端。</li>
   <li>启动 <a href="https://caddyserver.com">Caddy</a>，为 <code>YOUR-IP.sslip.io</code> 申请 HTTPS 证书（一个指向你 IP 的免费通配 DNS 名；设置 <code>DOMAIN=your.domain</code> 可使用你自己的域名）。</li>
   <li>提供客户端，并把 <code>/v1/*</code> 转发到你的节点。浏览器只和你的服务器通信：同源、无 CORS、无第三方 API。</li>
+  <li>启动一个小服务，为分享的 cast 生成链接预览：把 <code>/c/&lt;fid&gt;/&lt;hash&gt;</code> 这样的链接贴到 Farcaster 或 Telegram 时，会显示作者和内容。</li>
 </ol>
 <p>随时重新运行同一条命令即可更新客户端。</p>
 
