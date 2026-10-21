@@ -10,7 +10,8 @@
 #   HCLOUD_TOKEN        required. Hetzner Cloud → your project → Security → API tokens (Read & Write)
 #   SERVER_TYPE         default: cheapest type with >= 4 vCPU and >= 16 GB RAM
 #   LOCATION            default: fsn1 (Falkenstein). Others: nbg1, hel1, ash, hil
-#   VOLUME_GB           default: 2000 (Snapchain needs ~2 TB free)
+#   VOLUME_GB           default: 2000 (Snapchain needs ~2 TB free); falls back to 1000, then 500.
+#                       0 = no volume, use the server's local disk (pick a SERVER_TYPE with >= 500 GB disk)
 #   SSH_PUBKEY_FILE     default: ~/.ssh/id_ed25519.pub (created if missing)
 #   NAME                default: townhall
 #
@@ -109,7 +110,19 @@ IP=$(jq -r .server.public_net.ipv4.ip <<<"$SERVER")
 
 # Volume. New Hetzner accounts have a limit on total volume size; if 2 TB is over it,
 # fall back to smaller sizes and say so. Ask Hetzner to raise the limit to run long-term.
-if hc GET "/volumes?name=$NAME-data" | jq -e '.volumes[0]' >/dev/null; then
+LOCAL_GB=$(jq -r '.server.server_type.disk // 0' <<<"$SERVER")
+big_disk_types() {
+  hc GET "/server_types?per_page=50" | jq -r --arg loc "$LOCATION" '
+    [.server_types[]
+      | select((.deprecation == null) and (.deprecated != true) and .architecture == "x86" and .cores >= 4 and .memory >= 16 and .disk >= 500)
+      | . as $t | ($t.prices[] | select(.location == $loc)) as $p
+      | {name: $t.name, disk: $t.disk, price: ($p.price_monthly.gross | tonumber)}]
+    | sort_by(.price) | .[] | "    \(.name)  \(.disk) GB local disk  ~\(.price | floor) €/mo"'
+}
+if [ "$VOLUME_GB" = 0 ]; then
+  say "No volume (VOLUME_GB=0): the node uses the server's ${LOCAL_GB} GB local disk"
+  [ "$LOCAL_GB" -ge 500 ] || echo "  ! ${LOCAL_GB} GB is too small for Snapchain. Pick a SERVER_TYPE with >= 500 GB local disk."
+elif hc GET "/volumes?name=$NAME-data" | jq -e '.volumes[0]' >/dev/null; then
   say "Using your existing volume '$NAME-data'"
 else
   MADE=""
@@ -121,9 +134,19 @@ else
     if [ "$CODE" -lt 400 ]; then MADE=$SIZE; break; fi
     echo "  volume ${SIZE} GB: $(jq -r '.error.message // .' <<<"$OUT")"
   done
-  [ -n "$MADE" ] || die "Could not create a volume. Raise your volume limit in the Hetzner console (Limits) and re-run."
-  say "Attached a ${MADE} GB volume"
-  if [ "$MADE" -lt 2000 ]; then
+  if [ -z "$MADE" ] && [ "$LOCAL_GB" -ge 500 ]; then
+    say "No volume (your account's volume limit is reached): the node uses the ${LOCAL_GB} GB local disk"
+  elif [ -z "$MADE" ]; then
+    echo
+    echo "  Your Hetzner account's volume limit is reached, and this server's local disk (${LOCAL_GB} GB) is too small."
+    echo "  Either ask Hetzner to raise the limit (console → Limits), or use a server with a big local disk:"
+    big_disk_types || true
+    echo "  Delete the server '$NAME' in the Hetzner console, then run this again with SERVER_TYPE=<one above> VOLUME_GB=0"
+    die "Could not create a volume."
+  else
+    say "Attached a ${MADE} GB volume"
+  fi
+  if [ -n "$MADE" ] && [ "$MADE" -lt 2000 ]; then
     echo "  ! Snapchain recommends 2 TB free. ${MADE} GB should be enough to start syncing;"
     echo "    to run long-term, ask Hetzner to raise your volume limit and resize the volume."
   fi

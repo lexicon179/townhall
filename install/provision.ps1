@@ -10,7 +10,8 @@
 #   HCLOUD_TOKEN   required. Hetzner Cloud -> your project -> Security -> API tokens (Read & Write)
 #   SERVER_TYPE    default: cheapest type with >= 4 vCPU and >= 16 GB RAM
 #   LOCATION       default: fsn1 (Falkenstein). Others: nbg1, hel1
-#   VOLUME_GB      default: 2000; falls back to 1000, then 500, if your account's limit is lower
+#   VOLUME_GB      default: 2000; falls back to 1000, then 500, if your account's limit is lower.
+#                  0 = no volume, use the server's local disk (pick a SERVER_TYPE with >= 500 GB disk)
 #   NAME           default: townhall
 #
 # Needs the OpenSSH client, which Windows 10 and 11 include (Settings -> Optional features).
@@ -108,8 +109,14 @@
   $Ip = $server.public_net.ipv4.ip
 
   # 5. Volume. New accounts have a limit on total volume size: fall back to smaller sizes.
-  $vol = (Hc GET "/volumes?name=$Name-data").volumes | Select-Object -First 1
-  if ($vol) {
+  #    VOLUME_GB=0, or no volume allowed but a big local disk: the node uses the local disk.
+  $localGb = [int]$server.server_type.disk
+  $vol = $null
+  if ($VolumeGb -ne 0) { $vol = (Hc GET "/volumes?name=$Name-data").volumes | Select-Object -First 1 }
+  if ($VolumeGb -eq 0) {
+    Say "No volume (VOLUME_GB=0): the node uses the server's $localGb GB local disk"
+    if ($localGb -lt 500) { Write-Host "  ! $localGb GB is too small for Snapchain. Pick a SERVER_TYPE with >= 500 GB local disk." }
+  } elseif ($vol) {
     Say "Using your existing volume '$Name-data'"
   } else {
     $made = 0
@@ -118,9 +125,23 @@
       $r = Hc POST /volumes @{ name = "$Name-data"; size = $size; server = $server.id; automount = $true; format = 'ext4' } -Soft
       if ($r) { $made = $size; break }
     }
-    if (-not $made) { Fail 'Could not create a volume. Raise your volume limit in the Hetzner console (Limits) and run this again.' }
-    Say "Attached a $made GB volume"
-    if ($made -lt 2000) { Write-Host "  ! Snapchain recommends 2 TB free. $made GB is enough to sync today (see the guide)." }
+    if (-not $made -and $localGb -ge 500) {
+      Say "No volume (your account's volume limit is reached): the node uses the $localGb GB local disk"
+    } elseif (-not $made) {
+      Write-Host ''
+      Write-Host "  Your Hetzner account's volume limit is reached, and this server's local disk ($localGb GB) is too small."
+      Write-Host '  Either ask Hetzner to raise the limit (console -> Limits), or use a server with a big local disk:'
+      (Hc GET '/server_types?per_page=50').server_types |
+        Where-Object { -not $_.deprecation -and -not $_.deprecated -and $_.architecture -eq 'x86' -and $_.cores -ge 4 -and $_.memory -ge 16 -and $_.disk -ge 500 } |
+        ForEach-Object { $t = $_; $p = $t.prices | Where-Object { $_.location -eq $Location } | Select-Object -First 1
+          if ($p) { [pscustomobject]@{ name = $t.name; disk = $t.disk; price = [double]$p.price_monthly.gross } } } |
+        Sort-Object price | ForEach-Object { Write-Host ("    {0}  {1} GB local disk  ~{2} EUR/mo" -f $_.name, $_.disk, [math]::Floor($_.price)) }
+      Write-Host "  Delete the server '$Name' in the Hetzner console, then run this again with `$env:SERVER_TYPE=`"<one above>`"; `$env:VOLUME_GB=`"0`""
+      Fail 'Could not create a volume.'
+    } else {
+      Say "Attached a $made GB volume"
+      if ($made -lt 2000) { Write-Host "  ! Snapchain recommends 2 TB free. $made GB is enough to sync today (see the guide)." }
+    }
   }
 
   Say 'Waiting for the server to boot'

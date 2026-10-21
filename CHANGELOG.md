@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Step 0 copes with Hetzner's volume limit on new accounts: if no volume can be made, it uses a big local disk when the server has one, or lists the server types that do. `VOLUME_GB=0` skips the volume.
 - Navigation people know from Farcaster apps: bottom tabs on phones (Home, Search, Live, Replies, you), a left rail on wide screens. Settings moved to your profile.
 - Connect with a recovery phrase is one button with plain steps (finding your account, giving this client its key, done) instead of Check / Add app key and raw addresses.
 - An empty feed suggests a few accounts to follow, one tap each.

@@ -29,6 +29,8 @@ $env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-f
 
 Already have a server (Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 1 TB disk or more)? Skip step 0.
 
+Hetzner says the volume limit is reached (common on new accounts)? Step 0 lists the server types with a big local disk; delete the server it made and run step 0 again with `SERVER_TYPE=<one of them> VOLUME_GB=0` before `bash`. Cloud servers are billed by the hour, so a few days on a bigger type is a small part of its monthly price.
+
 Done testing? Delete the server and volume so billing stops:
 
 ```bash
