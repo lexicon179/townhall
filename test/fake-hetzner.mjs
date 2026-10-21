@@ -19,7 +19,9 @@ http.createServer(async (req, res) => {
   ] }));
   if (u.startsWith('/firewalls?')) return res.end(JSON.stringify({ firewalls: [] }));
   if (u === '/firewalls') return res.end(JSON.stringify({ firewall: { id: 22 } }));
-  if (u.startsWith('/servers?')) return res.end(JSON.stringify({ servers: [] }));
+  if (req.method === 'DELETE' && u.startsWith('/servers/')) return res.end(JSON.stringify({ action: { id: 1 } }));
+  // FAKE_EXISTING=1: a server with this name already exists (from an earlier run)
+  if (u.startsWith('/servers?')) return res.end(JSON.stringify({ servers: process.env.FAKE_EXISTING ? [{ id: 32, server_type: { disk: Number(process.env.FAKE_DISK || 240) }, public_net: { ipv4: { ip: '203.0.113.6' } }, datacenter: { location: { name: 'fsn1' } } }] : [] }));
   if (u.startsWith('/volumes?')) return res.end(JSON.stringify({ volumes: [] }));
   // FAKE_DISK: local disk of the created server; FAKE_VOL_LIMIT=1: every volume is over the account limit
   if (u === '/servers') return res.end(JSON.stringify({ server: { id: 33, server_type: { disk: Number(process.env.FAKE_DISK || 240) }, public_net: { ipv4: { ip: '203.0.113.7' } } } }));

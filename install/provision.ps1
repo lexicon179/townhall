@@ -93,6 +93,7 @@
   Write-Host '  This is billed by Hetzner while it exists. Delete it with destroy.ps1 when you are done.'
 
   # 4. Server. Re-running is safe: an existing server with this name is reused.
+  $created = $false
   $server = (Hc GET "/servers?name=$Name").servers | Select-Object -First 1
   if ($server) {
     Say "Using your existing server '$Name'"
@@ -102,7 +103,7 @@
       Say "Creating server '$Name' ($Type, $loc, Ubuntu 24.04)"
       $r = Hc POST /servers @{ name = $Name; server_type = $Type; location = $loc; image = 'ubuntu-24.04'
         ssh_keys = @($key.id); firewalls = @(@{ firewall = $fw.id }); start_after_create = $true } -Soft
-      if ($r) { $server = $r.server; break }
+      if ($r) { $server = $r.server; $created = $true; break }
     }
     if (-not $server) { Fail "No capacity for $Type right now. Try again in a while, or set `$env:SERVER_TYPE (e.g. cpx42)." }
   }
@@ -136,7 +137,13 @@
         ForEach-Object { $t = $_; $p = $t.prices | Where-Object { $_.location -eq $Location } | Select-Object -First 1
           if ($p) { [pscustomobject]@{ name = $t.name; disk = $t.disk; price = [double]$p.price_monthly.gross } } } |
         Sort-Object price | ForEach-Object { Write-Host ("    {0}  {1} GB local disk  ~{2} EUR/mo" -f $_.name, $_.disk, [math]::Floor($_.price)) }
-      Write-Host "  Delete the server '$Name' in the Hetzner console, then run this again with `$env:SERVER_TYPE=`"<one above>`"; `$env:VOLUME_GB=`"0`""
+      if ($created) {
+        Hc DELETE "/servers/$($server.id)" | Out-Null
+        Write-Host '  (The server this run just made is deleted again, so nothing keeps billing.)'
+      } else {
+        Write-Host "  First delete the existing server '$Name': run destroy.ps1 with the same token (see the guide)."
+      }
+      Write-Host "  Then run this again with `$env:SERVER_TYPE=`"<one above>`"; `$env:VOLUME_GB=`"0`" set first."
       Fail 'Could not create a volume.'
     } else {
       Say "Attached a $made GB volume"

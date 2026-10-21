@@ -87,6 +87,7 @@ fi
 echo "  This is billed by Hetzner while it exists. Delete it in the Hetzner console when you are done."
 
 # Re-running is safe: an existing server with this name is reused.
+CREATED=""
 SERVER=$(hc GET "/servers?name=$NAME" | jq -c '{server: .servers[0]} | select(.server != null)')
 if [ -n "$SERVER" ]; then
   LOCATION=$(jq -r '.server.datacenter.location.name // .server.location.name // "unknown"' <<<"$SERVER")
@@ -100,7 +101,7 @@ else
       '{name:$n, server_type:$t, location:$l, image:"ubuntu-24.04", ssh_keys:[$k], firewalls:[{firewall:$f}], start_after_create:true}')
     OUT=$(curl -sS -X POST "$API/servers" -H "Authorization: Bearer $HCLOUD_TOKEN" -H 'Content-Type: application/json' --data "$BODY" -w '\n%{http_code}')
     CODE=$(tail -n1 <<<"$OUT"); OUT=$(sed '$d' <<<"$OUT")
-    if [ "$CODE" -lt 400 ]; then SERVER="$OUT"; LOCATION="$LOC"; break; fi
+    if [ "$CODE" -lt 400 ]; then SERVER="$OUT"; LOCATION="$LOC"; CREATED=1; break; fi
     echo "  $LOC: $(jq -r '.error.message // .' <<<"$OUT")"
   done
   [ -n "$SERVER" ] || die "No capacity for $SERVER_TYPE right now. Try again in a while, or set SERVER_TYPE (e.g. SERVER_TYPE=cpx42)."
@@ -141,7 +142,12 @@ else
     echo "  Your Hetzner account's volume limit is reached, and this server's local disk (${LOCAL_GB} GB) is too small."
     echo "  Either ask Hetzner to raise the limit (console → Limits), or use a server with a big local disk:"
     big_disk_types || true
-    echo "  Delete the server '$NAME' in the Hetzner console, then run this again with SERVER_TYPE=<one above> VOLUME_GB=0"
+    if [ -n "$CREATED" ]; then
+      hc DELETE "/servers/$SERVER_ID" >/dev/null && echo "  (The server this run just made is deleted again, so nothing keeps billing.)"
+    else
+      echo "  First delete the existing server '$NAME': run destroy.sh with the same token (see the guide)."
+    fi
+    echo "  Then run this again with SERVER_TYPE=<one above> VOLUME_GB=0 before bash."
     die "Could not create a volume."
   else
     say "Attached a ${MADE} GB volume"
