@@ -93,6 +93,7 @@ Development and tests: see [CONTRIBUTING.md](CONTRIBUTING.md). Security notes an
 Things we found outdated in the official repos while building this, sent back as pull requests:
 
 - [hub-monorepo#2748](https://github.com/farcasterxyz/hub-monorepo/pull/2748): the `hello-world` example adds its signer with a gasless `KEY_ADD` instead of a KeyGateway transaction.
+- [snapchain#1080](https://github.com/farcasterxyz/snapchain/pull/1080): documents `/v1/signersByFid` and `/v1/signer` (and their gRPC methods), which return onchain and gasless keys together and give the nonce a `KEY_ADD` needs.
 
 ## License
 

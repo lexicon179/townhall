@@ -413,6 +413,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li><b>The node crash-looped with a metrics error.</b> The official mainnet compose file points metrics at a <code>statsd</code> service that has to be started too. <code>node.sh</code> starts both.</li>
   <li><b>A <code>df</code> flag mix-up</b> (<code>-P</code> with <code>--output</code>) stopped the disk check on Ubuntu. Fixed.</li>
   <li><b>App keys changed mid-build.</b> The first version added the key with an Optimism transaction and asked for $1 of ETH. Snapchain now accepts gasless keys (<code>KEY_ADD</code>), so that step and the ETH are gone. The official <code>hello-world</code> example still used the transaction, so we sent a fix upstream: <a href="https://github.com/farcasterxyz/hub-monorepo/pull/2748">hub-monorepo#2748</a>.</li>
+  <li><b>The key nonce was undocumented.</b> A gasless <code>KEY_ADD</code> needs the account's current nonce, which comes from <code>/v1/signersByFid</code>. The guide points there, but the API reference only listed the old onchain-only endpoint, so we read it from the node's source. We documented both signer endpoints upstream: <a href="https://github.com/farcasterxyz/snapchain/pull/1080">snapchain#1080</a>.</li>
   <li><b>Recovery phrase confusion.</b> The Farcaster app has two phrases: the account's recovery phrase and the wallet's. Only the account one owns your FID; the client shows the custody address and FID so you can tell before anything is signed.</li>
 </ul>
 

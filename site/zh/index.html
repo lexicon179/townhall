@@ -411,6 +411,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li><b>节点因指标错误反复崩溃重启。</b>官方主网 compose 文件把指标指向一个 <code>statsd</code> 服务，它也需要启动。<code>node.sh</code> 会同时启动两者。</li>
   <li><b><code>df</code> 参数冲突</b>（<code>-P</code> 与 <code>--output</code>）导致 Ubuntu 上的磁盘检查中断。已修复。</li>
   <li><b>应用密钥机制在开发途中变了。</b>第一版通过 Optimism 交易添加密钥，需要 1 美元的 ETH。现在 Snapchain 接受免 gas 密钥（<code>KEY_ADD</code>），这一步和 ETH 都不需要了。官方的 <code>hello-world</code> 示例仍在用交易，所以我们向上游提交了修复：<a href="https://github.com/farcasterxyz/hub-monorepo/pull/2748">hub-monorepo#2748</a>。</li>
+  <li><b>密钥 nonce 没有文档。</b>免 gas 的 <code>KEY_ADD</code> 需要账号当前的 nonce，它来自 <code>/v1/signersByFid</code>。指南指向了这个接口，但 API 参考里只有旧的、仅限链上的接口，所以我们只能从节点源码里读出来。我们向上游补充了这两个签名者接口的文档：<a href="https://github.com/farcasterxyz/snapchain/pull/1080">snapchain#1080</a>。</li>
   <li><b>助记词混淆。</b>Farcaster 应用里有两个助记词：账号的恢复助记词和钱包的助记词。只有账号的那个拥有你的 FID；客户端会在签名之前显示托管地址和 FID，方便你分辨。</li>
 </ul>
 
