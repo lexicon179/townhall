@@ -410,7 +410,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li><b>快照放不下。</b>Snapchain 会保留每个下载的分块，再为每个分片写一个完整的 tar，然后解压，直到最后才清理。单个分片的峰值约 1.5 TB。现在 <code>node.sh</code> 会启动一个小守护程序，在节点用完分块和 tar 后立即删除，峰值保持在 800 GB 左右。</li>
   <li><b>节点因指标错误反复崩溃重启。</b>官方主网 compose 文件把指标指向一个 <code>statsd</code> 服务，它也需要启动。<code>node.sh</code> 会同时启动两者。</li>
   <li><b><code>df</code> 参数冲突</b>（<code>-P</code> 与 <code>--output</code>）导致 Ubuntu 上的磁盘检查中断。已修复。</li>
-  <li><b>应用密钥机制在开发途中变了。</b>第一版通过 Optimism 交易添加密钥，需要 1 美元的 ETH。现在 Snapchain 接受免 gas 密钥（<code>KEY_ADD</code>），这一步和 ETH 都不需要了。</li>
+  <li><b>应用密钥机制在开发途中变了。</b>第一版通过 Optimism 交易添加密钥，需要 1 美元的 ETH。现在 Snapchain 接受免 gas 密钥（<code>KEY_ADD</code>），这一步和 ETH 都不需要了。官方的 <code>hello-world</code> 示例仍在用交易，所以我们向上游提交了修复：<a href="https://github.com/farcasterxyz/hub-monorepo/pull/2748">hub-monorepo#2748</a>。</li>
   <li><b>助记词混淆。</b>Farcaster 应用里有两个助记词：账号的恢复助记词和钱包的助记词。只有账号的那个拥有你的 FID；客户端会在签名之前显示托管地址和 FID，方便你分辨。</li>
 </ul>
 

@@ -412,7 +412,7 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
   <li><b>The snapshot did not fit.</b> Snapchain keeps every downloaded chunk, writes a full tar per shard, then unpacks it, and only cleans up at the very end. On one shard that peaks at roughly 1.5 TB. <code>node.sh</code> now starts a small guard that deletes chunks and tars as soon as the node is done with them, so the peak stays near 800 GB.</li>
   <li><b>The node crash-looped with a metrics error.</b> The official mainnet compose file points metrics at a <code>statsd</code> service that has to be started too. <code>node.sh</code> starts both.</li>
   <li><b>A <code>df</code> flag mix-up</b> (<code>-P</code> with <code>--output</code>) stopped the disk check on Ubuntu. Fixed.</li>
-  <li><b>App keys changed mid-build.</b> The first version added the key with an Optimism transaction and asked for $1 of ETH. Snapchain now accepts gasless keys (<code>KEY_ADD</code>), so that step and the ETH are gone.</li>
+  <li><b>App keys changed mid-build.</b> The first version added the key with an Optimism transaction and asked for $1 of ETH. Snapchain now accepts gasless keys (<code>KEY_ADD</code>), so that step and the ETH are gone. The official <code>hello-world</code> example still used the transaction, so we sent a fix upstream: <a href="https://github.com/farcasterxyz/hub-monorepo/pull/2748">hub-monorepo#2748</a>.</li>
   <li><b>Recovery phrase confusion.</b> The Farcaster app has two phrases: the account's recovery phrase and the wallet's. Only the account one owns your FID; the client shows the custody address and FID so you can tell before anything is signed.</li>
 </ul>
 

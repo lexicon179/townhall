@@ -88,6 +88,12 @@ test/      mock Snapchain node, local chainId 10 chain, end-to-end browser tests
 
 Development and tests: see [CONTRIBUTING.md](CONTRIBUTING.md). Security notes and reporting: see [SECURITY.md](SECURITY.md).
 
+## Upstream fixes
+
+Things we found outdated in the official repos while building this, sent back as pull requests:
+
+- [hub-monorepo#2748](https://github.com/farcasterxyz/hub-monorepo/pull/2748): the `hello-world` example adds its signer with a gasless `KEY_ADD` instead of a KeyGateway transaction.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). Snapchain itself runs from its official image under its own license.
