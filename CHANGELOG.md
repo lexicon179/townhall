@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Upstream: sent [docs#473](https://github.com/farcasterxyz/docs/pull/473), moving the docs.farcaster.xyz Hello World to gasless account keys. Linked from the guide and the README.
 - Upstream: sent [snapchain#1080](https://github.com/farcasterxyz/snapchain/pull/1080), documenting the unified signer endpoints. Linked from the guide and the README.
 - Upstream: sent [hub-monorepo#2748](https://github.com/farcasterxyz/hub-monorepo/pull/2748), moving the official hello-world example to gasless app keys. Linked from the guide and the README.
 - Step 0 copes with Hetzner's volume limit on new accounts: if no volume can be made, it uses a big local disk when the server has one, or lists the server types that do. `VOLUME_GB=0` skips the volume.

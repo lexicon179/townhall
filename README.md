@@ -94,6 +94,7 @@ Things we found outdated in the official repos while building this, sent back as
 
 - [hub-monorepo#2748](https://github.com/farcasterxyz/hub-monorepo/pull/2748): the `hello-world` example adds its signer with a gasless `KEY_ADD` instead of a KeyGateway transaction.
 - [snapchain#1080](https://github.com/farcasterxyz/snapchain/pull/1080): documents `/v1/signersByFid` and `/v1/signer` (and their gRPC methods), which return onchain and gasless keys together and give the nonce a `KEY_ADD` needs.
+- [docs#473](https://github.com/farcasterxyz/docs/pull/473): the Hello World guide on docs.farcaster.xyz adds its account key with a gasless `KEY_ADD`, matching Snapchain's guide, and fixes a key request signed over the wrong key.
 
 ## License
 
