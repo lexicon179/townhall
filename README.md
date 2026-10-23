@@ -88,6 +88,13 @@ test/      mock Snapchain node, local chainId 10 chain, end-to-end browser tests
 
 Development and tests: see [CONTRIBUTING.md](CONTRIBUTING.md). Security notes and reporting: see [SECURITY.md](SECURITY.md).
 
+## People who ran it
+
+Ran the three commands on their own servers, cast through their own node, and vouched for it on Farcaster:
+
+- [@runn3rr](https://farcaster.xyz/runn3rr/0x2d001899)
+- [@eat](https://farcaster.xyz/eat/0x0bc3b39c)
+
 ## Upstream fixes
 
 Things we found outdated in the official repos while building this, sent back as pull requests:

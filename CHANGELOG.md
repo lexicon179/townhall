@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Guide and README list the people who ran it on their own servers, linking to their posts on Farcaster.
 - Upstream: sent [docs#473](https://github.com/farcasterxyz/docs/pull/473), moving the docs.farcaster.xyz Hello World to gasless account keys. Linked from the guide and the README.
 - Upstream: sent [snapchain#1080](https://github.com/farcasterxyz/snapchain/pull/1080), documenting the unified signer endpoints. Linked from the guide and the README.
 - Upstream: sent [hub-monorepo#2748](https://github.com/farcasterxyz/hub-monorepo/pull/2748), moving the official hello-world example to gasless app keys. Linked from the guide and the README.
