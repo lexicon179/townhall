@@ -8,6 +8,8 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/node.sh | bash
 #
+# Re-running it is safe and updates the node to the latest Snapchain release.
+#
 # Options: DATA_DIR (default: mount point with the most free space)
 set -euo pipefail
 
@@ -44,7 +46,10 @@ grep -q 'read_node = true' docker-compose.yml || die "Unexpected compose file: i
 # 4. Start the node and the small metrics sink it reports to. The official config
 #    points the node at statsd:8125 and the node exits if that name doesn't resolve.
 #    (Grafana stays off; the firewall keeps the statsd ports private.)
-say "Starting the node"
+say "Starting the node (pulling the latest Snapchain image first)"
+# The image tag is :latest, and `up` alone keeps whatever image is already on disk.
+# Pulling first means re-running this step updates the node, e.g. after a network upgrade.
+$SUDO docker compose pull -q snapchain statsd
 $SUDO docker compose up -d snapchain statsd
 
 # 5. Wait until the HTTP API answers

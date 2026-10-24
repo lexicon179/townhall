@@ -91,7 +91,8 @@ function mood(m: keyof typeof MOOD) {
 async function nodeStatus() {
   try {
     const i = await info();
-    const delays: number[] = (i.shardInfos ?? []).filter((s: any) => s.shardId !== 0).map((s: any) => Number(s.blockDelay ?? 0));
+    // Every shard counts, shard 0 included: KEY_ADD and KEY_REMOVE are validated there.
+    const delays: number[] = (i.shardInfos ?? []).map((s: any) => Number(s.blockDelay ?? 0));
     const worst = delays.length ? Math.max(...delays) : 0;
     const height = Math.max(0, ...(i.shardInfos ?? []).map((s: any) => Number(s.maxHeight ?? 0)));
     $node.className = 'node ' + (worst < 10 ? 'ok' : 'warn');

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Step 1 pulls the latest Snapchain image before starting, so re-running it updates the node. Nodes left on 0.14.3 stopped following blocks after the 23 October mainnet upgrade.
+- The client's "in sync" check includes shard 0, where key messages are validated; a node behind on shard 0 now shows as catching up.
+- A third person ran it on their own server: @drakhonen.eth, listed in the guide and the README.
 - Guide and README list the people who ran it on their own servers, linking to their posts on Farcaster.
 - Upstream: sent [docs#473](https://github.com/farcasterxyz/docs/pull/473), moving the docs.farcaster.xyz Hello World to gasless account keys. Linked from the guide and the README.
 - Upstream: sent [snapchain#1080](https://github.com/farcasterxyz/snapchain/pull/1080), documenting the unified signer endpoints. Linked from the guide and the README.

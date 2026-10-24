@@ -31,6 +31,8 @@ Already have a server (Ubuntu 22.04 or 24.04, 4 vCPU, 16 GB RAM, 1 TB disk or mo
 
 Hetzner says the volume limit is reached (common on new accounts)? Step 0 lists the server types with a big local disk and removes the small server it just made; run step 0 again with `SERVER_TYPE=<one of them> VOLUME_GB=0` before `bash`. Cloud servers are billed by the hour, so a few days on a bigger type is a small part of its monthly price.
 
+To update the node (for example after a network upgrade), re-run step 1: it pulls the latest Snapchain release and restarts the node.
+
 Done testing? Delete the server and volume so billing stops:
 
 ```bash
@@ -94,6 +96,7 @@ Ran the three commands on their own servers, cast through their own node, and vo
 
 - [@runn3rr](https://farcaster.xyz/runn3rr/0x2d001899)
 - [@eat](https://farcaster.xyz/eat/0x0bc3b39c)
+- [@drakhonen.eth](https://farcaster.xyz/drakhonen.eth/0xea32a4f0)
 
 ## Upstream fixes
 
