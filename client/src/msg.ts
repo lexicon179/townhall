@@ -6,7 +6,7 @@ import './polyfill';
  */
 import {
   makeCastAdd, makeCastRemove, makeReactionAdd, makeReactionRemove, makeLinkAdd, makeLinkRemove,
-  Message, FarcasterNetwork, ReactionType, hexStringToBytes,
+  Message, FarcasterNetwork, ReactionType, CastType, hexStringToBytes,
 } from '@farcaster/core';
 import { HUB, fidByName } from './hub';
 import { signerOf, type Stored } from './keys';
@@ -68,11 +68,13 @@ export async function cast(
   if (link && embeds.length < room && !embeds.some((e) => e.url === link)) embeds.push({ url: link });
   if (embeds.length > room) throw new Error(`A cast can carry ${room === 1 ? 'one attachment next to a quote' : 'two attachments'}.`);
   if (quote) embeds.push({ castId: { fid: quote.fid, hash: bytes(quote.hash) } });
+  // Up to 320 bytes is a regular cast; 321 to 1024 must be marked as a long cast, or the node refuses it.
+  const type = new TextEncoder().encode(parsed.text).length > 320 ? CastType.LONG_CAST : CastType.CAST;
   return submitRaw(await makeCastAdd({
     ...parsed,
     embeds,
     embedsDeprecated: [],
-    type: 0,
+    type,
     ...(parent ? { parentCastId: { fid: parent.fid, hash: bytes(parent.hash) } } : extra.channelUrl ? { parentUrl: extra.channelUrl } : {}),
   } as any, { fid: k.fid, network }, signerOf(k)));
 }

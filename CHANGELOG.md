@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix: casts over 320 bytes failed with "text > 320 bytes". They now go out as long casts (up to 1024 bytes), as the protocol requires.
 - Images and video: attach up to two to a cast. They upload to your own server (`/api/upload`, stored in `/opt/townhall/media`, served at `/media/`), and the cast carries the URL as an embed. Uploads need a signature from an app key your node lists as active; the server checks the file's real type from its bytes. `UPLOAD_FIDS` and `MEDIA_QUOTA_GB` (default 20) on step 2. Videos in casts play in the client, and the Farcaster app's own streams play where the browser supports HLS.
 - Channels: post to a channel, read a channel from your node (`#/ch/<name>`, a `/channel` tag on each channel cast, or search `/dev`). Members-only channels show a warning before you post.
 - `test/e2e-media.mjs` covers uploads, video, channels and the upload checks.

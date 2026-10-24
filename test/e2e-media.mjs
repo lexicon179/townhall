@@ -109,6 +109,13 @@ await p.click('.compose .send');
 await sent();
 ok('cast with image + video sent', true);
 
+// 9. a long cast (over 320 bytes) goes out as LONG_CAST
+await home();
+await p.fill('.compose textarea', 'long '.repeat(80).trim());
+await p.click('.compose .send');
+await sent();
+ok('text over 320 bytes is sent as a long cast', true);
+
 const errs = logs.filter((l) => l.startsWith('pageerror'));
 ok('no page errors', !errs.length);
 if (errs.length) console.log(errs.join('\n'));
