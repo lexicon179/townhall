@@ -41,6 +41,8 @@ curl -fsSL https://raw.githubusercontent.com/townhall-fc/townhall/main/install/d
 
 Windows: `$env:HCLOUD_TOKEN="your_token"; irm https://raw.githubusercontent.com/townhall-fc/townhall/main/install/destroy.ps1 | iex`
 
+Video: [the whole thing in 59 seconds](https://townhallfc.xyz/#video) (vertical, with sound; [中文版](https://townhallfc.xyz/zh/#video)).
+
 ## What to expect
 
 Measured on the demo node (Hetzner `cx43`, 1 TB volume, Snapchain 0.14.3, October 2026):
