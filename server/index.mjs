@@ -1,4 +1,4 @@
-// townhall sign-in service.
+// townhall service: sign-in, link previews, channels, uploads.
 //
 // Lets people connect their Farcaster account by approving townhall in the Farcaster app
 // (a "signed key request"), so nobody ever types a recovery phrase into a website.
@@ -19,10 +19,14 @@
 //                             phrase from stdin and keeps only the derived key
 //   node index.mjs serve      HTTP on 127.0.0.1:3390 (/api/*, /c/*), proxied by Caddy
 //
+// The same service also looks up channel URLs (/api/channel) and takes image and video
+// uploads (/api/upload) for the client; see the sections below.
+//
 // /c/<fid>/<hash> serves the client with link-preview tags for that cast, so a shared
 // cast shows its author and text in Farcaster, Telegram and the like.
 import http from 'node:http';
-import { readFileSync, writeFileSync, existsSync, chmodSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, chmodSync, readdirSync, statSync } from 'node:fs';
+import { createHash, createPublicKey, verify as cverify } from 'node:crypto';
 import { createPublicClient, createWalletClient, http as vhttp, formatEther, isHex } from 'viem';
 import { generatePrivateKey, privateKeyToAccount, mnemonicToAccount } from 'viem/accounts';
 import { bytesToHex } from 'viem';
@@ -166,20 +170,144 @@ async function castPage(fid, hash, origin) {
   return page.replace('<title>townhall</title>', `<title>${escHtml(title)} on townhall</title>\n  ${tags}`);
 }
 
+// ---------- channels ----------
+//
+// A cast is "in a channel" when its parentUrl is the channel's URL. That part is protocol.
+// The channel list itself (names, URLs, who may post) lives in the Farcaster client API, so
+// we look the URL up there once per channel and cache it. No key needed.
+
+const channels = new Map(); // id -> { at, value }
+async function channel(id) {
+  const hit = channels.get(id);
+  if (hit && Date.now() - hit.at < 3600_000) return hit.value;
+  const r = await fetch(`${FC_API}/v1/channel?channelId=${encodeURIComponent(id)}`, { signal: AbortSignal.timeout(6000) });
+  if (r.status === 404) throw Object.assign(new Error(`No channel /${id}`), { code: 404 });
+  const body = await r.json().catch(() => ({}));
+  const c = body?.result?.channel;
+  if (!r.ok || !c?.url) throw Object.assign(new Error(`Could not look up /${id} (Farcaster API ${r.status})`), { code: 502 });
+  const value = { id: c.id, name: c.name, url: c.url, imageUrl: c.imageUrl || null, description: c.description || '', publicCasting: c.publicCasting !== false };
+  channels.set(id, { at: Date.now(), value });
+  return value;
+}
+
+// ---------- media: images and video on your own server ----------
+//
+// The Farcaster app uploads media to its own host. A self-hosted client has no such host,
+// so it uses itself: files are stored on this server and served from your domain under
+// /media/, and the cast carries that URL as an embed. Turn the server off and the media
+// in old casts stops loading; that is the trade.
+//
+// Who may upload: someone holding an app key that your node lists as active for their fid.
+// The browser signs sha256("townhall-upload:<fid>:<unix time>:<sha256 of the file>") with
+// that key; we check the signature, the time, and the key against the node.
+
+const MEDIA = process.env.MEDIA_DIR || '/media';
+const MB = 1024 * 1024;
+const IMAGE_MAX = Number(process.env.IMAGE_MAX_MB || 10) * MB;
+const VIDEO_MAX = Number(process.env.VIDEO_MAX_MB || 100) * MB;
+const QUOTA = Number(process.env.MEDIA_QUOTA_GB || 20) * 1024 * MB;
+const UPLOAD_FIDS = new Set(String(process.env.UPLOAD_FIDS || '').split(',').map((s) => Number(s.trim())).filter(Boolean));
+
+/** What the file is, from its first bytes. The name and Content-Type the browser sends are not trusted. */
+function sniff(b) {
+  const s = (i, n) => b.subarray(i, i + n).toString('latin1');
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { ext: 'jpg', kind: 'image' };
+  if (s(0, 8) === '\x89PNG\r\n\x1a\n') return { ext: 'png', kind: 'image' };
+  if (s(0, 4) === 'GIF8') return { ext: 'gif', kind: 'image' };
+  if (s(0, 4) === 'RIFF' && s(8, 4) === 'WEBP') return { ext: 'webp', kind: 'image' };
+  if (s(4, 4) === 'ftyp') return { ext: s(8, 4) === 'qt  ' ? 'mov' : 'mp4', kind: 'video' };
+  if (b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3) return { ext: 'webm', kind: 'video' };
+  return null;
+}
+
+let used = -1; // bytes in MEDIA, counted once and then kept up to date
+function mediaUsed() {
+  if (used < 0) { used = 0; for (const f of readdirSync(MEDIA)) used += statSync(`${MEDIA}/${f}`).size; }
+  return used;
+}
+
+const keyOk = new Map(); // `${fid}:${key}` -> time it was last confirmed active
+async function activeKey(fid, key) {
+  const k = `${fid}:${key}`;
+  if (Date.now() - (keyOk.get(k) || 0) < 600_000) return true;
+  let pageToken = '';
+  for (let i = 0; i < 10; i++) {
+    const r = await nodeGet(`signersByFid?fid=${fid}&pageSize=100${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`);
+    if (!r) throw Object.assign(new Error('Your node is not answering. Try again in a minute.'), { code: 503 });
+    if ((r.signers ?? []).some((s) => String(s.key).toLowerCase() === key)) { keyOk.set(k, Date.now()); return true; }
+    if (!r.nextPageToken) return false;
+    pageToken = r.nextPageToken;
+  }
+  return false;
+}
+
+const uploads = new Map(); // fid -> [count, windowStart]
+async function upload(req, origin) {
+  const fid = Number(req.headers['x-fid']);
+  const key = String(req.headers['x-key'] || '').toLowerCase();
+  const ts = Number(req.headers['x-ts']);
+  const sig = String(req.headers['x-sig'] || '');
+  if (!Number.isSafeInteger(fid) || fid <= 0 || !/^0x[0-9a-f]{64}$/.test(key) || !/^0x[0-9a-f]{128}$/i.test(sig)) throw Object.assign(new Error('Sign in to upload.'), { code: 401 });
+  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) throw Object.assign(new Error('Upload signature expired. Check your device clock and try again.'), { code: 401 });
+  if (UPLOAD_FIDS.size && !UPLOAD_FIDS.has(fid)) throw Object.assign(new Error('Uploads on this server are limited to its owner.'), { code: 403 });
+  const len = Number(req.headers['content-length'] || 0);
+  if (len > VIDEO_MAX) throw Object.assign(new Error(`Too big. Up to ${VIDEO_MAX / MB} MB for video, ${IMAGE_MAX / MB} MB for images.`), { code: 413 });
+
+  const u = uploads.get(fid) || [0, Date.now()];
+  if (Date.now() - u[1] > 3600_000) { u[0] = 0; u[1] = Date.now(); }
+  if (++u[0] > 60) throw Object.assign(new Error('Too many uploads this hour.'), { code: 429 });
+  uploads.set(fid, u);
+
+  const chunks = []; let n = 0;
+  for await (const c of req) { n += c.length; if (n > VIDEO_MAX) throw Object.assign(new Error(`Too big. Up to ${VIDEO_MAX / MB} MB.`), { code: 413 }); chunks.push(c); }
+  const body = Buffer.concat(chunks);
+  const type = sniff(body);
+  if (!type) throw Object.assign(new Error('Only images (JPEG, PNG, GIF, WebP) and video (MP4, MOV, WebM).'), { code: 415 });
+  if (type.kind === 'image' && body.length > IMAGE_MAX) throw Object.assign(new Error(`Images up to ${IMAGE_MAX / MB} MB.`), { code: 413 });
+
+  const sha = createHash('sha256').update(body).digest('hex');
+  const digest = createHash('sha256').update(`townhall-upload:${fid}:${ts}:${sha}`).digest();
+  const pub = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from(key.slice(2), 'hex')]), format: 'der', type: 'spki' });
+  if (!cverify(null, digest, pub, Buffer.from(sig.slice(2), 'hex'))) throw Object.assign(new Error('Bad upload signature.'), { code: 401 });
+  if (!(await activeKey(fid, key))) throw Object.assign(new Error('Your node does not list this key as active for your account yet.'), { code: 401 });
+
+  const name = `${sha.slice(0, 32)}.${type.ext}`;
+  const file = `${MEDIA}/${name}`;
+  if (!existsSync(file)) {
+    if (mediaUsed() + body.length > QUOTA) throw Object.assign(new Error('This server is out of media space (MEDIA_QUOTA_GB).'), { code: 507 });
+    writeFileSync(file, body, { mode: 0o644 });
+    used += body.length;
+  }
+  return { url: `${origin}/media/${name}`, kind: type.kind, bytes: body.length };
+}
+
+// Caddy terminates HTTPS and says so in X-Forwarded-Proto; links we hand out use the same scheme and host.
+const first = (v) => String(v || '').split(',')[0].trim();
+const originOf = (req) => `${first(req.headers['x-forwarded-proto']) === 'http' ? 'http' : 'https'}://${first(req.headers['x-forwarded-host'] || req.headers.host)}`;
+
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
   try {
+    if (url.pathname === '/api/upload' && req.method === 'POST') {
+      if (!existsSync(MEDIA)) return json(res, 503, { error: 'Uploads are not set up on this server. Re-run step 2.' });
+      return json(res, 200, await upload(req, originOf(req)));
+    }
+    if (url.pathname === '/api/channel') {
+      const id = String(url.searchParams.get('id') || '').replace(/^\//, '').toLowerCase();
+      if (!/^[a-z0-9-]{1,32}$/.test(id)) return json(res, 400, { error: 'Channel names are lowercase letters, numbers and dashes.' });
+      if (limited(ip)) return json(res, 429, { error: 'Too many requests. Try again in a minute.' });
+      return json(res, 200, await channel(id));
+    }
     const cm = url.pathname.match(/^\/c\/(\d{1,10})\/(0x[0-9a-fA-F]{40})\/?$/);
     if (cm) {
-      const origin = `https://${String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim()}`;
       res.setHeader('content-type', 'text/html; charset=utf-8');
       res.setHeader('cache-control', 'public, max-age=300');
-      return res.end(await castPage(Number(cm[1]), cm[2].toLowerCase(), origin));
+      return res.end(await castPage(Number(cm[1]), cm[2].toLowerCase(), originOf(req)));
     }
     if (url.pathname === '/api/config') {
       const a = load();
-      return json(res, 200, { signin: !!a?.fid, appFid: a?.fid ?? null, defaultFid: DEFAULT_FID || null, castLinks: existsSync(`${WWW}/index.html`) });
+      return json(res, 200, { signin: !!a?.fid, appFid: a?.fid ?? null, defaultFid: DEFAULT_FID || null, castLinks: existsSync(`${WWW}/index.html`), media: existsSync(MEDIA), channels: true });
     }
     if (url.pathname === '/api/signin' && req.method === 'POST') {
       if (limited(ip)) return json(res, 429, { error: 'Too many requests. Try again in a minute.' });

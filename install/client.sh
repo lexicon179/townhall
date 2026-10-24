@@ -12,6 +12,9 @@
 #   DOMAIN   your own domain pointed at this server (default: <ip>.sslip.io, works with no setup).
 #            The <ip>.sslip.io address keeps working alongside it.
 #   REPO     git URL of townhall (default: https://github.com/townhall-fc/townhall)
+#   UPLOAD_FIDS     who may upload images and video, as comma-separated fids (default: anyone
+#                   signed in to this client with an active key)
+#   MEDIA_QUOTA_GB  total space for uploads on this server (default: 20)
 set -euo pipefail
 
 say() { printf '\033[1m▸ %s\033[0m\n' "$*"; }
@@ -48,13 +51,19 @@ $SITES {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy no-referrer
-		Content-Security-Policy "default-src 'self'; img-src * data:; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'self'; img-src * data: blob:; media-src 'self' https: blob:; connect-src 'self' https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
 	}
 	handle /v1/* {
 		reverse_proxy 127.0.0.1:3381
 	}
 	handle /api/* {
 		reverse_proxy 127.0.0.1:3390
+	}
+	# Images and video you attach to casts, stored on this server (see server/index.mjs).
+	handle /media/* {
+		root * /
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
 	}
 	# Shared casts: the optional service (signin.sh) adds link-preview tags.
 	handle /c/* {
@@ -79,23 +88,29 @@ $SITES {
 }
 EOF
 
-# 4. Small service for link previews of shared casts (/c/<fid>/<hash>). It is the same
-#    program signin.sh configures; without an app account it only serves previews.
-say "Starting the link-preview service"
-SRV=$APP_DIR/signin-app; DATA=$APP_DIR/signin-data
-$SUDO mkdir -p "$DATA" && $SUDO chmod 700 "$DATA"
+# 4. Small service for link previews of shared casts (/c/<fid>/<hash>), channel lookups and
+#    media uploads. It is the same program signin.sh configures for sign-in.
+say "Starting the townhall service (link previews, channels, uploads)"
+SRV=$APP_DIR/signin-app; DATA=$APP_DIR/signin-data; MEDIA=$APP_DIR/media
+$SUDO mkdir -p "$DATA" "$MEDIA" && $SUDO chmod 700 "$DATA" && $SUDO chmod 755 "$MEDIA"
 $SUDO rm -rf "$SRV" && $SUDO cp -r "$APP_DIR/src/server" "$SRV"
 $SUDO docker run --rm -v "$SRV:/app" -w /app node:22-alpine npm i --omit=dev --no-audit --no-fund >/dev/null </dev/null
 DEFAULT_FID=$($SUDO cat "$DATA/default-fid" 2>/dev/null || true)
+# Upload settings are kept in $DATA so signin.sh and later runs restart the service with them.
+UPLOAD_FIDS="${UPLOAD_FIDS-$($SUDO cat "$DATA/upload-fids" 2>/dev/null || true)}"
+MEDIA_QUOTA_GB="${MEDIA_QUOTA_GB:-$($SUDO cat "$DATA/media-quota-gb" 2>/dev/null || echo 20)}"
+echo "$UPLOAD_FIDS" | $SUDO tee "$DATA/upload-fids" >/dev/null
+echo "$MEDIA_QUOTA_GB" | $SUDO tee "$DATA/media-quota-gb" >/dev/null
 $SUDO docker rm -f townhall-signin >/dev/null 2>&1 || true
 $SUDO docker run -d --name townhall-signin --restart unless-stopped --network host \
-  -e APP_FILE=/data/app.json -e DEFAULT_FID="$DEFAULT_FID" -e WWW_DIR=/www \
-  -v "$SRV:/app:ro" -v "$DATA:/data" -v "$APP_DIR/www:/www:ro" -w /app node:22-alpine node index.mjs serve >/dev/null </dev/null
+  -e APP_FILE=/data/app.json -e DEFAULT_FID="$DEFAULT_FID" -e WWW_DIR=/www -e MEDIA_DIR=/media \
+  -e UPLOAD_FIDS="$UPLOAD_FIDS" -e MEDIA_QUOTA_GB="$MEDIA_QUOTA_GB" \
+  -v "$SRV:/app:ro" -v "$DATA:/data" -v "$MEDIA:/media" -v "$APP_DIR/www:/www:ro" -w /app node:22-alpine node index.mjs serve >/dev/null </dev/null
 
 say "Starting the web server"
 $SUDO docker rm -f townhall-web >/dev/null 2>&1 || true
 $SUDO docker run -d --name townhall-web --restart unless-stopped --network host \
-  -v "$APP_DIR/Caddyfile:/etc/caddy/Caddyfile:ro" -v "$APP_DIR/www:/srv:ro" \
+  -v "$APP_DIR/Caddyfile:/etc/caddy/Caddyfile:ro" -v "$APP_DIR/www:/srv:ro" -v "$MEDIA:/media:ro" \
   -v townhall-caddy-data:/data caddy:2-alpine >/dev/null
 
 for _ in $(seq 1 30); do curl -fsS "https://$DOMAIN" >/dev/null 2>&1 && break; sleep 3; done

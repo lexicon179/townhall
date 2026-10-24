@@ -72,9 +72,11 @@ say "App account: fid $FID ($ADDR)"
 say "Starting the service"
 echo "$DEFAULT_FID" | $SUDO tee "$DATA/default-fid" >/dev/null # client.sh keeps it when it restarts the service
 $SUDO docker rm -f townhall-signin >/dev/null 2>&1 || true
+MEDIA=$APP_DIR/media; $SUDO mkdir -p "$MEDIA" && $SUDO chmod 755 "$MEDIA"
 $SUDO docker run -d --name townhall-signin --restart unless-stopped --network host \
-  -e APP_FILE=/data/app.json -e DEFAULT_FID="$DEFAULT_FID" -e WWW_DIR=/www \
-  -v "$APP:/app:ro" -v "$DATA:/data" -v "$APP_DIR/www:/www:ro" -w /app node:22-alpine node index.mjs serve >/dev/null
+  -e APP_FILE=/data/app.json -e DEFAULT_FID="$DEFAULT_FID" -e WWW_DIR=/www -e MEDIA_DIR=/media \
+  -e UPLOAD_FIDS="$($SUDO cat "$DATA/upload-fids" 2>/dev/null || true)" -e MEDIA_QUOTA_GB="$($SUDO cat "$DATA/media-quota-gb" 2>/dev/null || echo 20)" \
+  -v "$APP:/app:ro" -v "$DATA:/data" -v "$MEDIA:/media" -v "$APP_DIR/www:/www:ro" -w /app node:22-alpine node index.mjs serve >/dev/null
 for _ in $(seq 1 20); do curl -fsS localhost:3390/api/config 2>/dev/null | grep -q '"signin":true' && break; sleep 1; done
 curl -fsS localhost:3390/api/config | grep -q '"signin":true' || die "Service did not start: docker logs townhall-signin"
 

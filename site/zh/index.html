@@ -338,6 +338,12 @@ In sync when every 'blocks behind' is in the single digits.</code></pre>
 </ol>
 <h3>发帖、回复、点赞、转发、关注</h3>
 <p>每个操作都会构建一条协议消息，在浏览器里用你的应用密钥签名，再把原始字节提交给你的节点。像 <code>@alice</code> 这样的提及会在你的节点上解析，并作为协议级提及保存。</p>
+<h3>图片和视频，存在你自己的服务器上</h3>
+<p>点文本框下方的图片按钮，可以附上最多两个图片或视频（JPEG、PNG、GIF、WebP 最大 10 MB；MP4、MOV、WebM 最大 100 MB）。Farcaster 应用把媒体上传到它自己的主机；自托管客户端没有这样的主机，所以用你的服务器。文件通过 <code>/api/upload</code> 上传，存放在 <code>/opt/townhall/media</code>，并从你的域名的 <code>/media/&lt;hash&gt;.&lt;ext&gt;</code> 提供。cast 把这个 URL 作为 embed 携带，和任何链接一样，所以每个 Farcaster 客户端都能显示。</p>
+<p>只有持有你的节点认定为有效的 app key 的人才能上传：浏览器用这把密钥签名文件的哈希，服务器检查签名并向你的节点确认这把密钥。如果只允许自己上传，用 <code>UPLOAD_FIDS=&lt;你的 fid&gt;</code> 重新运行第 2 步。空间上限为 20 GB（<code>MEDIA_QUOTA_GB</code>）。代价是：关掉服务器，你旧 cast 里的媒体就无法加载。</p>
+<h3>频道</h3>
+<p>频道 cast 就是一条普通 cast，它的 <code>parentUrl</code> 是频道的 URL，例如 <code>https://farcaster.xyz/~/channel/dev</code>。这一部分属于协议，所以你的节点像存储任何 cast 一样存储并转发它。频道列表（名称、URL、谁可以发帖）在 Farcaster 客户端 API 里，不在协议里，所以你的服务器在那里查一次频道 URL 并缓存。不需要任何 key。</p>
+<p>点文本框下方的 <code>/</code>，输入频道名即可发到该频道。点任何 cast 上的 <code>/频道</code> 标签，或搜索 <code>/dev</code>，即可阅读频道：所有带这个 <code>parentUrl</code> 的 cast，直接来自你的节点。在仅限成员的频道里，Farcaster 应用可能会在频道信息流中隐藏非成员的 cast；这条 cast 仍然存在于网络和你的节点中。</p>
 <h3>按应用包含或排除 cast</h3>
 <p>每条 cast 都由某个应用密钥签名，而每个应用密钥都记录了请求它的应用（该应用自己的 FID）。客户端在你的节点上为每位作者查询这一信息，显示为 <i>via farcaster</i>、<i>via own key</i> 等。点击信息流上方的应用名即可隐藏或显示它的 cast。你的选择会保存在本浏览器中。</p>
 <h3>Live：你的节点眼中的网络</h3>

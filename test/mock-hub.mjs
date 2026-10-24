@@ -156,7 +156,9 @@ const routes = {
   // like the real node, castsByFid also returns CAST_REMOVE messages
   '/v1/castsByFid': (p) => ({ messages: page(msgs.filter((m) => [MessageType.CAST_ADD, MessageType.CAST_REMOVE].includes(m.data.type) && m.data.fid === Number(p.fid)), p).map(toJson) }),
   '/v1/castById': (p) => { const m = of(MessageType.CAST_ADD, p.fid).find((x) => hex(x.hash) === p.hash); if (!m) throw 404; return toJson(m); },
-  '/v1/castsByParent': (p) => ({ messages: of(MessageType.CAST_ADD).filter((m) => m.data.castAddBody.parentCastId && hex(m.data.castAddBody.parentCastId.hash) === p.hash).map(toJson) }),
+  '/v1/castsByParent': (p) => ({ messages: (p.url
+    ? page(of(MessageType.CAST_ADD).filter((m) => m.data.castAddBody.parentUrl === p.url), p)
+    : of(MessageType.CAST_ADD).filter((m) => m.data.castAddBody.parentCastId && hex(m.data.castAddBody.parentCastId.hash) === p.hash)).map(toJson) }),
   '/v1/linksByFid': (p) => ({ messages: page(of(MessageType.LINK_ADD, p.fid), p).map(toJson) }),
   '/v1/linksByTargetFid': (p) => ({ messages: page(of(MessageType.LINK_ADD).filter((m) => m.data.linkBody.targetFid === Number(p.target_fid)), p).map(toJson) }),
   '/v1/castsByMention': (p) => ({ messages: page(of(MessageType.CAST_ADD).filter((m) => (m.data.castAddBody.mentions ?? []).includes(Number(p.fid))), p).map(toJson) }),
@@ -197,6 +199,12 @@ async function fcApi(path, req, res) {
     skr.set(token, { ...b, state: 'pending', userFid: null });
     return { result: { signedKeyRequest: { token, deeplinkUrl: `farcaster://signed-key-request?token=${token}`, state: 'pending', key: b.key } } };
   }
+  if (path === '/v1/channel') { // channel lookup, as the Farcaster client API answers it
+    const id = u.searchParams.get('channelId');
+    const ch = { dev: { publicCasting: true }, members: { publicCasting: false } }[id];
+    if (!ch) throw 404;
+    return { result: { channel: { id, name: id, url: `https://farcaster.xyz/~/channel/${id}`, imageUrl: null, description: `the /${id} channel`, ...ch } } };
+  }
   if (path === '/v2/signed-key-request') {
     const r = skr.get(u.searchParams.get('token')); if (!r) throw 404;
     return { result: { signedKeyRequest: { token: u.searchParams.get('token'), state: r.state, userFid: r.userFid ?? undefined } } };
@@ -218,7 +226,7 @@ const routesTest = {
 http.createServer(async (req, res) => {
   const path = req.url.split('?')[0];
   try {
-    if (path.startsWith('/v2/')) {
+    if (path.startsWith('/v2/') || path === '/v1/channel') {
       const body = await fcApi(path, req, res);
       res.setHeader('content-type', 'application/json');
       return res.end(JSON.stringify(body));
@@ -229,10 +237,18 @@ http.createServer(async (req, res) => {
       return res.end(r?.ok ? await r.text() : readFileSync(join(DIST, 'index.html')));
     }
     if (path.startsWith('/api/')) { // what Caddy does in production
-      let raw = ''; for await (const c of req) raw += c;
-      const r = await fetch(SIGNIN + req.url, { method: req.method, headers: { 'content-type': 'application/json' }, body: req.method === 'POST' ? raw : undefined });
+      const chunks = []; for await (const c of req) chunks.push(c);
+      const headers = { 'content-type': req.headers['content-type'] || 'application/json', 'x-forwarded-host': req.headers.host, 'x-forwarded-proto': 'http' };
+      for (const h of ['x-fid', 'x-key', 'x-ts', 'x-sig']) if (req.headers[h]) headers[h] = req.headers[h];
+      const r = await fetch(SIGNIN + req.url, { method: req.method, headers, body: req.method === 'POST' ? Buffer.concat(chunks) : undefined });
       res.statusCode = r.status; res.setHeader('content-type', 'application/json');
       return res.end(await r.text());
+    }
+    if (path.startsWith('/media/') && process.env.MEDIA_DIR) { // Caddy serves these from disk
+      const f = join(process.env.MEDIA_DIR, path.slice(7).replace(/[^\w.]/g, ''));
+      if (!existsSync(f)) throw 404;
+      res.setHeader('content-type', { '.jpg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp', '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.webm': 'video/webm' }[extname(f)] || 'application/octet-stream');
+      return res.end(readFileSync(f));
     }
     if (routesTest[path]) { const body = await routesTest[path](q(req.url)); res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify(body)); }
     if (path === '/v1/submitMessage' && req.method === 'POST') {

@@ -47,19 +47,33 @@ async function parseMentions(text: string) {
   return { text: out, mentions, mentionsPositions };
 }
 
-/** A quote is an ordinary cast with the quoted cast's id in its embeds. */
-export async function cast(k: Stored, text: string, parent?: { fid: number; hash: string }, quote?: { fid: number; hash: string }) {
+/** A cast carries at most two embeds: links (images and video are links too) or a quoted cast. */
+export const MAX_EMBEDS = 2;
+
+/**
+ * A quote is an ordinary cast with the quoted cast's id in its embeds.
+ * Attached media go first, then the first link in the text if there is room.
+ * A channel cast is an ordinary cast whose parentUrl is the channel's URL; a reply's
+ * parent is the cast it answers, so a reply never sets a channel itself.
+ */
+export async function cast(
+  k: Stored, text: string, parent?: { fid: number; hash: string }, quote?: { fid: number; hash: string },
+  extra: { media?: string[]; channelUrl?: string } = {},
+) {
   const parsed = await parseMentions(text);
-  const url = text.match(/https?:\/\/\S+/)?.[0];
   const embeds: any[] = [];
-  if (url) embeds.push({ url });
+  for (const url of extra.media ?? []) embeds.push({ url });
+  const link = text.match(/https?:\/\/\S+/)?.[0];
+  const room = MAX_EMBEDS - (quote ? 1 : 0);
+  if (link && embeds.length < room && !embeds.some((e) => e.url === link)) embeds.push({ url: link });
+  if (embeds.length > room) throw new Error(`A cast can carry ${room === 1 ? 'one attachment next to a quote' : 'two attachments'}.`);
   if (quote) embeds.push({ castId: { fid: quote.fid, hash: bytes(quote.hash) } });
   return submitRaw(await makeCastAdd({
     ...parsed,
     embeds,
     embedsDeprecated: [],
     type: 0,
-    ...(parent ? { parentCastId: { fid: parent.fid, hash: bytes(parent.hash) } } : {}),
+    ...(parent ? { parentCastId: { fid: parent.fid, hash: bytes(parent.hash) } } : extra.channelUrl ? { parentUrl: extra.channelUrl } : {}),
   } as any, { fid: k.fid, network }, signerOf(k)));
 }
 

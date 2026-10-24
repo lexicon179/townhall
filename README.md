@@ -57,6 +57,8 @@ Measured on the demo node (Hetzner `cx43`, 1 TB volume, Snapchain 0.14.3, Octobe
 
 - Reads everything from your node: the feed of people you follow, profiles, threads, replies and mentions.
 - Posts with its own app key: casts, replies, quotes, likes, recasts, follows, deletes.
+- **Images and video on your own server:** attach up to two per cast. They are stored on your server and served from your domain under `/media/`; the cast carries the URL. Only someone with a key your node lists as active can upload (`UPLOAD_FIDS` limits it to you, `MEDIA_QUOTA_GB` caps the space).
+- **Channels:** post to a channel (the cast's `parentUrl` is the channel URL) and read any channel from your node. Channel names are looked up once in the Farcaster channel list, no key.
 - Share: every cast has a link on your own client that opens for anyone, signed in or not (the share sheet on phones).
 - Adds that key from your recovery phrase as a gasless `KEY_ADD` (custody-signed EIP-712, no transaction, no ETH). The phrase is used only in the browser and cleared right after. The key can revoke itself from Settings.
 - Shows which app signed each cast and lets you include or exclude casts by app.

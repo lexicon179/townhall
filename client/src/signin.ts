@@ -12,7 +12,7 @@ import type { Stored } from './store';
 const toHex = (b: Uint8Array) => ('0x' + [...b].map((x) => x.toString(16).padStart(2, '0')).join('')) as `0x${string}`;
 const fromHex = (h: string) => Uint8Array.from((h.replace(/^0x/, '').match(/../g) ?? []).map((x) => parseInt(x, 16)));
 
-export type Config = { signin: boolean; appFid: number | null; defaultFid: number | null; castLinks?: boolean };
+export type Config = { signin: boolean; appFid: number | null; defaultFid: number | null; castLinks?: boolean; media?: boolean; channels?: boolean };
 
 export async function loadConfig(): Promise<Config> {
   try {

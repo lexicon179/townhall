@@ -304,3 +304,35 @@ body { padding-bottom: 76px; }
 /* the mark: a lime gargoyle on dark, a dark one on light */
 .lm-h { fill: #c6ff3d; } .lm-m { fill: #0d0d0f; } .lm-g { fill: #c6ff3d; }
 [data-theme=light] .lm-h { fill: #0d0d0f; } [data-theme=light] .lm-m { fill: #c6ff3d; } [data-theme=light] .lm-g { fill: #0d0d0f; }
+
+/* ---------- attachments and channels ---------- */
+.embed-vid { display: block; width: 100%; max-height: 520px; border-radius: var(--r-l); border: 1px solid var(--hair); margin: 4px 0 8px; background: #000; }
+.head .chan { font-size: 13px; color: var(--signal); text-decoration: none; font-weight: 550; }
+.head .chan:hover { text-decoration: underline; }
+.compose .tools { display: flex; gap: 2px; margin-left: -8px; margin-right: auto; align-items: center; }
+.compose .tool { width: 38px; height: 34px; display: grid; place-items: center; background: none; border: none; border-radius: 999px; cursor: pointer; color: var(--muted); font-family: 'Fira Mono', ui-monospace, monospace; font-size: 17px; }
+.compose .tool:hover, .compose .tool.on { color: var(--signal); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.compose .tool svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.compose .tool:disabled { opacity: .35; cursor: default; background: none; }
+.compose .count { margin-right: 0; }
+.chan-row { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 14.5px; }
+.chan-row .slash { color: var(--signal); font-family: 'Fira Mono', ui-monospace, monospace; }
+.chan-row input { width: 12ch; border: 1px solid var(--hair); background: transparent; border-radius: 999px; padding: 3px 10px; font-size: 14px; }
+.chan-row .st { font-size: 13px; color: var(--muted); }
+.chan-row .st.ok { color: var(--signal); }
+.chan-row .st.warn { color: var(--warn); }
+.chan-row .st.bad { color: var(--bad); }
+.chan-row .x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; }
+.atts { display: flex; gap: 8px; flex-wrap: wrap; }
+.atts:empty { display: none; }
+.att { position: relative; width: 120px; height: 120px; border-radius: 14px; overflow: hidden; border: 1px solid var(--hair); background: var(--surface); margin: 4px 0 8px; }
+.att img, .att video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.att .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--signal); transition: width .2s; }
+.att.done .bar { display: none; }
+.att .rm { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 16px; line-height: 26px; padding: 0; }
+.att .tag { position: absolute; left: 6px; top: 6px; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(0,0,0,.65); color: #fff; font-family: 'Fira Mono', ui-monospace, monospace; }
+.att.failed { border-color: var(--bad); }
+.chan-head { display: flex; gap: 14px; align-items: center; padding: 22px 0 14px; border-bottom: 1px solid var(--hair); }
+.chan-head img { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; border: 1px solid var(--hair); }
+.chan-head h1 { margin: 0; font-size: 24px; }
+.chan-head p { margin: 2px 0 0; color: var(--muted); font-size: 14.5px; }

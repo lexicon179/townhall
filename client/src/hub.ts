@@ -52,6 +52,31 @@ export async function castsByParent(fid: number, hash: string): Promise<CastMsg[
   return onlyCasts(r.messages);
 }
 
+/** Casts in a channel: every cast whose parentUrl is the channel's URL, newest first. */
+export async function castsByUrl(url: string, pageSize = 50): Promise<CastMsg[]> {
+  const r = await get<{ messages: CastMsg[] }>('castsByParent', { url, pageSize, reverse: true });
+  return onlyCasts(r.messages);
+}
+
+export type Channel = { id: string; name: string; url: string; imageUrl: string | null; description: string; publicCasting: boolean };
+const channelCache = new Map<string, Promise<Channel>>();
+/** Channel names and URLs come from the Farcaster client API, through your server (/api/channel). */
+export function channelInfo(id: string): Promise<Channel> {
+  id = id.replace(/^\//, '').toLowerCase();
+  if (!channelCache.has(id)) {
+    const p = fetch(`/api/channel?id=${encodeURIComponent(id)}`).then(async (r) => {
+      const b = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(b.error || `Could not look up /${id}`);
+      return b as Channel;
+    });
+    p.catch(() => channelCache.delete(id));
+    channelCache.set(id, p);
+  }
+  return channelCache.get(id)!;
+}
+/** "/dev" for a parentUrl that is a channel URL (https://farcaster.xyz/~/channel/dev, or the older warpcast.com form). */
+export const channelOfUrl = (url?: string) => url?.match(/^https:\/\/(?:farcaster\.xyz|warpcast\.com)\/~\/channel\/([a-z0-9-]+)\/?$/)?.[1] ?? null;
+
 export async function following(fid: number, max = 200): Promise<number[]> {
   const out: number[] = [];
   let pageToken: string | undefined;

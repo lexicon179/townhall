@@ -1,13 +1,15 @@
 import './style.css';
 import {
   info, castsByFid, castsByParent, following, followers, castsByMention, profile, fidByName, appOfCast,
-  isFollowing, liked, signerActive, toDate, linkCount, castById, type CastMsg,
+  isFollowing, liked, signerActive, toDate, linkCount, castById, castsByUrl, channelInfo, channelOfUrl,
+  type CastMsg, type Channel,
 } from './hub';
 import { loadKey, saveKey, forgetKey, type Stored } from './store';
 // Signing, posting and the Base lookup load on first use, so reading starts with a small script.
 const K = () => import('./keys');
 const M = () => import('./msg');
 const V = () => import('./votes');
+const U = () => import('./media');
 import { loadConfig, startSignin, resumeSignin, dropPending, waitSignin, qrSvg, isMobile, type Config, type Pending } from './signin';
 import { viewLive, stopLive } from './live';
 
@@ -144,6 +146,14 @@ const ICON = {
   delete: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4.5h4V7M7 7l1 12.5h8L17 7"/></svg>',
 };
 
+// Video embeds: files (ours, uploaded to your server) play anywhere; the Farcaster app's own
+// streams are HLS (.m3u8), which only Safari plays without an extra library. Elsewhere they stay links.
+const VIDEO_RE = /\.(mp4|mov|webm)(\?|$)/i;
+const HLS_RE = /\.m3u8(\?|$)/i;
+const HLS_OK = !!document.createElement('video').canPlayType('application/vnd.apple.mpegurl');
+/** Channel id -> the parentUrl casts actually use, learned from casts we have shown. */
+const knownChannels = new Map<string, string>();
+
 async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean } = {}) {
   const p = await profile(c.data.fid);
   const body = c.data.castAddBody;
@@ -152,8 +162,11 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
   const parent = body.parentCastId;
   const parentName = parent && opts.showParent !== false ? (await profile(parent.fid)).username || `fid:${parent.fid}` : null;
   const images = (body.embeds ?? []).filter((e) => e.url && /\.(png|jpe?g|gif|webp)(\?|$)|imagedelivery\.net/i.test(e.url));
+  const videos = (body.embeds ?? []).filter((e) => e.url && !images.includes(e) && (VIDEO_RE.test(e.url) || (HLS_RE.test(e.url) && HLS_OK)));
   // a link already written in the text is not repeated as an embed under it
-  const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e) && !(body.text || '').includes(e.url));
+  const links = (body.embeds ?? []).filter((e) => e.url && !images.includes(e) && !videos.includes(e) && !(body.text || '').includes(e.url));
+  const chan = channelOfUrl(body.parentUrl);
+  if (chan) knownChannels.set(chan, body.parentUrl!);
   const quoted = opts.nested ? [] : (body.embeds ?? []).filter((e) => e.castId).slice(0, 1);
   const mine = key && c.data.fid === key.fid;
 
@@ -165,11 +178,13 @@ async function castEl(c: CastMsg, opts: { showParent?: boolean; nested?: boolean
           <a class="name" href="#/u/${p.fid}">${esc(p.display || p.username || `fid ${p.fid}`)}</a>
           <span class="handle">@${esc(p.username || String(p.fid))}</span>
           <a class="time" href="#/c/${c.data.fid}/${c.hash}">${ago(toDate(c.data.timestamp))}</a>
+          ${chan ? `<a class="chan" href="#/ch/${chan}">/${esc(chan)}</a>` : ''}
           ${appName ? `<span class="via" title="The app that signed this cast (app fid ${app})">via ${esc(appName)}</span>` : ''}
         </div>
         ${parentName ? `<div class="reply-to">replying to <a href="#/c/${parent!.fid}/${parent!.hash}">@${esc(parentName)}</a></div>` : ''}
         <div class="text">${await renderText(c)}</div>
         ${images.map((e) => `<img class="embed-img" src="${esc(e.url!)}" alt="" loading="lazy">`).join('')}
+        ${videos.map((e) => `<video class="embed-vid" src="${esc(e.url!)}" controls playsinline preload="metadata"></video>`).join('')}
         ${links.map((e) => `<a class="embed" href="${esc(e.url!)}" target="_blank" rel="noreferrer">${esc(e.url!)}</a>`).join('')}
         <div class="quoted-slot"></div>
         ${opts.nested ? '' : `<div class="actions">
@@ -291,32 +306,123 @@ async function shareCast(c: CastMsg, username: string | undefined, b: HTMLElemen
   }
 }
 
-function composer(parent?: { fid: number; hash: string }, done?: () => void, quote?: { fid: number; hash: string }) {
+const TOOL = {
+  media: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5l-5-4.5-8.5 8"/></svg>',
+};
+
+type Att = { file: File; preview: string; kind: 'image' | 'video'; url?: string; failed?: boolean; el: HTMLElement };
+
+/**
+ * Write a cast. Top-level casts can go to a channel; any cast can carry images or video,
+ * uploaded to your own server. Replies stay in the thread they answer.
+ */
+function composer(parent?: { fid: number; hash: string }, done?: () => void, quote?: { fid: number; hash: string }, channel?: Channel) {
   const small = !!(parent || quote);
+  const canChannel = !parent && !!cfg.channels;
+  const room = 2 - (quote ? 1 : 0);
   const el = h(`
     <div class="compose ${small ? 'is-reply' : ''}">
-      <textarea rows="${small ? 2 : 3}" maxlength="1024" placeholder="${parent ? 'Write a reply' : quote ? 'Add your take' : 'Write a cast'}"></textarea>
-      <div class="row"><span class="count"></span><button class="btn primary" disabled>${parent ? 'Reply' : quote ? 'Quote' : 'Cast'}</button></div>
+      <div class="chan-row" ${channel ? '' : 'hidden'}><span class="slash">/</span><input aria-label="Channel" placeholder="channel" autocapitalize="off" autocomplete="off" spellcheck="false" value="${esc(channel?.id ?? '')}"><span class="st"></span><button class="x" title="No channel" aria-label="No channel">×</button></div>
+      <textarea rows="${small ? 2 : 3}" maxlength="1024" placeholder="${parent ? 'Write a reply' : quote ? 'Add your take' : channel ? `Write in /${esc(channel.id)}` : 'Write a cast'}"></textarea>
+      <div class="atts"></div>
+      <div class="row">
+        <div class="tools">
+          ${cfg.media ? `<button class="tool" data-t="media" title="Add images or video (stored on your server)" aria-label="Add images or video">${TOOL.media}</button><input type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/quicktime,video/webm" multiple hidden>` : ''}
+          ${canChannel ? `<button class="tool ${channel ? 'on' : ''}" data-t="chan" title="Post to a channel" aria-label="Post to a channel">/</button>` : ''}
+        </div>
+        <span class="count"></span><button class="btn primary send" disabled>${parent ? 'Reply' : quote ? 'Quote' : 'Cast'}</button>
+      </div>
       <div class="err"></div>
     </div>`);
-  const ta = el.querySelector('textarea')!, btn = el.querySelector('button')!, err = el.querySelector('.err')!, count = el.querySelector('.count')!;
-  ta.addEventListener('input', () => {
+  const ta = el.querySelector('textarea')!, btn = el.querySelector<HTMLButtonElement>('.send')!, err = el.querySelector('.err')!, count = el.querySelector('.count')!;
+  const attsEl = el.querySelector('.atts')!, fileIn = el.querySelector<HTMLInputElement>('input[type=file]');
+  const chanRow = el.querySelector<HTMLElement>('.chan-row')!, chanIn = chanRow.querySelector('input')!, chanSt = chanRow.querySelector<HTMLElement>('.st')!;
+  const mediaBtn = el.querySelector<HTMLButtonElement>('[data-t=media]'), chanBtn = el.querySelector<HTMLButtonElement>('[data-t=chan]');
+  let atts: Att[] = [];
+  let chan: Channel | null = channel ?? null;
+  let chanLookup: Promise<void> = Promise.resolve();
+
+  const uploading = () => atts.some((a) => !a.url && !a.failed);
+  const refresh = () => {
     const n = new TextEncoder().encode(ta.value).length;
-    count.textContent = n > 800 ? `${1024 - n} left` : '';
-    btn.disabled = !ta.value.trim();
-    ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+    count.textContent = uploading() ? 'Uploading…' : n > 800 ? `${1024 - n} left` : '';
+    btn.disabled = uploading() || atts.some((a) => a.failed) || (!ta.value.trim() && !atts.length);
+    if (mediaBtn) mediaBtn.disabled = atts.length >= room;
+  };
+  ta.addEventListener('input', () => { refresh(); ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+
+  // ---- images and video ----
+  mediaBtn?.addEventListener('click', () => fileIn!.click());
+  fileIn?.addEventListener('change', async () => {
+    const files = [...(fileIn.files ?? [])];
+    fileIn.value = '';
+    if (!key) { location.hash = '#/setup'; return; }
+    err.textContent = '';
+    const { upload, IMAGE_TYPES, VIDEO_TYPES } = await U();
+    for (const file of files) {
+      if (atts.length >= room) { err.textContent = `A cast can carry ${room === 1 ? 'one attachment next to a quote' : 'two attachments'}.`; break; }
+      const kind = IMAGE_TYPES.includes(file.type) ? 'image' : VIDEO_TYPES.includes(file.type) ? 'video' : null;
+      if (!kind) { err.textContent = `${file.name}: only images (JPEG, PNG, GIF, WebP) and video (MP4, MOV, WebM).`; continue; }
+      const preview = URL.createObjectURL(file);
+      const media = kind === 'image' ? `<img alt="" src="${preview}">` : `<video muted playsinline preload="metadata" src="${preview}"></video><span class="tag">video</span>`;
+      const tile = h(`<div class="att">${media}<span class="bar"></span><button class="rm" title="Remove" aria-label="Remove">×</button></div>`);
+      tile.querySelector<HTMLElement>('.bar')!.style.width = '4%';
+      const a: Att = { file, preview, kind, el: tile };
+      atts.push(a); attsEl.append(tile); refresh();
+      tile.querySelector('.rm')!.addEventListener('click', () => { atts = atts.filter((x) => x !== a); tile.remove(); URL.revokeObjectURL(preview); refresh(); });
+      const bar = tile.querySelector<HTMLElement>('.bar')!;
+      upload(key, file, (s) => (bar.style.width = `${Math.max(4, Math.round(s * 100))}%`))
+        .then((r) => { a.url = r.url; tile.classList.add('done'); })
+        .catch((e) => { a.failed = true; tile.classList.add('failed'); if (atts.includes(a)) err.textContent = (e as Error).message; })
+        .finally(refresh);
+    }
   });
+
+  // ---- channel ----
+  const showChan = (c: Channel | null, msg = '', cls = '') => {
+    chan = c;
+    chanSt.className = 'st ' + cls;
+    chanSt.textContent = msg;
+    chanBtn?.classList.toggle('on', !chanRow.hidden);
+  };
+  let t: number | undefined;
+  chanIn.addEventListener('input', () => {
+    clearTimeout(t);
+    const id = chanIn.value.trim().replace(/^\//, '').toLowerCase();
+    if (!id) { showChan(null); return; }
+    showChan(null, 'looking up…');
+    t = window.setTimeout(() => {
+      chanLookup = channelInfo(id).then((c) => {
+        if (chanIn.value.trim().replace(/^\//, '').toLowerCase() !== id) return;
+        if (c.publicCasting) showChan(c, `✓ ${c.name || c.id}`, 'ok');
+        else showChan(c, 'members only: the Farcaster app may hide casts from non-members in this channel', 'warn');
+      }).catch((e) => showChan(null, (e as Error).message, 'bad'));
+    }, 350);
+  });
+  if (channel) showChan(channel, `✓ ${channel.name || channel.id}`, 'ok');
+  chanBtn?.addEventListener('click', () => {
+    chanRow.hidden = !chanRow.hidden;
+    if (!chanRow.hidden) chanIn.focus(); else { chanIn.value = ''; showChan(null); }
+    chanBtn.classList.toggle('on', !chanRow.hidden);
+  });
+  chanRow.querySelector('.x')!.addEventListener('click', () => { chanRow.hidden = true; chanIn.value = ''; showChan(null); chanBtn?.classList.remove('on'); });
+
   btn.addEventListener('click', async () => {
-    if (!key || !ta.value.trim()) return;
+    if (!key || btn.disabled) return;
     btn.disabled = true; err.textContent = '';
     try {
-      await (await M()).cast(key, ta.value, parent, quote);
+      await chanLookup;
+      if (!chanRow.hidden && chanIn.value.trim() && !chan) throw new Error('Pick a channel that exists, or clear it.');
+      await (await M()).cast(key, ta.value, parent, quote, { media: atts.map((a) => a.url!), channelUrl: chanRow.hidden ? undefined : chan?.url });
       ta.value = '';
-      err.innerHTML = `<span class="muted">Sent. Your node relayed it to the network; it appears once a validator includes it, usually within seconds.</span>`;
+      for (const a of atts) URL.revokeObjectURL(a.preview);
+      atts = []; attsEl.innerHTML = '';
+      err.innerHTML = `<span class="muted">Sent${chan && !chanRow.hidden ? ` to /${esc(chan.id)}` : ''}. Your node relayed it to the network; it appears once a validator includes it, usually within seconds.</span>`;
+      refresh();
       done?.();
     } catch (e) {
       err.textContent = (e as Error).message;
-      btn.disabled = false;
+      refresh();
     }
   });
   return el;
@@ -444,6 +550,26 @@ async function viewThread(fid: number, hash: string) {
   const wrap = h('<section class="replies"></section>');
   for (const c of replies) wrap.append(await castEl(c, { showParent: false }));
   $view.append(wrap);
+}
+
+/**
+ * A channel: every cast whose parentUrl is the channel's URL, read from your node.
+ * The URL comes from casts already seen, else from the channel lookup on your server.
+ */
+async function viewChannel(id: string) {
+  id = id.toLowerCase();
+  $view.innerHTML = '<div class="center">Reading the channel from your node…</div>';
+  const info = await channelInfo(id).catch(() => null);
+  const url = info?.url ?? knownChannels.get(id);
+  if (!url) { $view.innerHTML = `<div class="center">Could not find /${esc(id)}.</div>`; return; }
+  const casts = await castsByUrl(url, 50);
+  $view.innerHTML = '';
+  $view.append(h(`<header class="chan-head">${info?.imageUrl ? `<img src="${esc(info.imageUrl)}" alt="">` : ''}<div><h1>/${esc(id)}</h1>${info?.description ? `<p>${esc(info.description)}</p>` : ''}</div></header>`));
+  if (key) $view.append(composer(undefined, undefined, undefined, info ?? { id, name: id, url, imageUrl: null, description: '', publicCasting: true }));
+  const list = h('<section></section>');
+  $view.append(list);
+  if (!casts.length) { list.innerHTML = '<div class="center">No casts in this channel on your node yet.</div>'; return; }
+  for (const el of await pool(casts, 8, (c) => castEl(c))) list.append(el);
 }
 
 /** Replies and mentions. By default only from mutuals: people you follow who follow you back. */
@@ -641,14 +767,16 @@ function viewSearch(initial = '') {
   $view.innerHTML = '';
   const box = h(`
     <section class="option main">
-      <h2>Find someone</h2>
-      <p class="muted">Type a username (dwr, balajis.eth) or an FID. Your node looks it up; nothing goes to anyone else.</p>
-      <form class="field"><input type="search" placeholder="username or FID" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn primary">Find</button></form>
+      <h2>Find someone or a channel</h2>
+      <p class="muted">Type a username (dwr, balajis.eth), an FID, or a channel with a slash (/dev). Your node looks up people; channel names come from the Farcaster channel list.</p>
+      <form class="field"><input type="search" placeholder="username, FID or /channel" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn primary">Find</button></form>
       <div class="err"></div>
     </section>`);
   const input = box.querySelector('input')!, err = box.querySelector('.err')!;
   const go = async () => {
-    const v = input.value.trim().replace(/^@/, '').toLowerCase();
+    const raw = input.value.trim().toLowerCase();
+    if (raw.startsWith('/') && raw.length > 1) { location.hash = `#/ch/${encodeURIComponent(raw.slice(1))}`; return; }
+    const v = raw.replace(/^@/, '');
     if (!v) return;
     err.textContent = '';
     const fid = /^\d+$/.test(v) ? Number(v) : await fidByName(v);
@@ -717,6 +845,7 @@ async function route() {
     }
     if (parts[0] === 'search') return viewSearch(decodeURIComponent(parts[1] || ''));
     if (parts[0] === 'c' && parts[2]) return await viewThread(Number(parts[1]), parts[2]);
+    if (parts[0] === 'ch' && parts[1]) return await viewChannel(decodeURIComponent(parts[1]));
     if (parts[0] === 'settings') return viewSettings();
     if (parts[0] === 'n') return await viewReplies();
     if (parts[0] === 'setup') return viewSetup();

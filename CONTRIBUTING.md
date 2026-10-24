@@ -28,6 +28,14 @@ APP_FILE=/tmp/app.json FC_API=http://127.0.0.1:3999 DEFAULT_FID=100 node server/
 node test/e2e-signin.mjs /tmp/shots
 ```
 
+Images, video and channels (the service and the mock share a media folder; files in the second argument: `pic.png`, `clip.mp4`, and `fake.png`, which is not an image):
+
+```bash
+MEDIA_DIR=/tmp/media APP_FILE=/tmp/none.json FC_API=http://127.0.0.1:3999 NODE_API=http://127.0.0.1:3999 WWW_DIR=client/dist node server/index.mjs serve
+MEDIA_DIR=/tmp/media node test/mock-hub.mjs
+node test/e2e-media.mjs /tmp/shots /tmp/files
+```
+
 `/tmp/app.json` holds `{"privateKey": "0x…", "fid": 777}` for a throwaway key.
 
 ## Pull requests
